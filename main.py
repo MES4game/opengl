@@ -16,6 +16,8 @@ import os
 import typing
 import time
 # pip imports
+import numpy
+import pyrr  # type: ignore
 import glfw  # type: ignore
 import OpenGL.GL as GL  # type: ignore
 # local imports
@@ -67,6 +69,17 @@ def initGlfw() -> typing.Any:
     return window
 
 
+TSHAPES: tuple[type[src.shapes.Shape], ...] = (
+    src.shapes.basics.Triangle,
+    src.shapes.basics.Square,
+    src.shapes.basics.Cube,
+    src.shapes.basics.Pyramid,
+    src.shapes.basics.Cone,
+    src.shapes.basics.Cylinder,
+    src.shapes.basics.Sphere
+)
+
+
 def initWork(
         renderer: src.Renderer,
         /
@@ -79,8 +92,35 @@ def initWork(
         renderer (src.Renderer): The renderer instance.
     """
     renderer.start = time.perf_counter_ns()
-    # TODO
-    pass
+
+    shapes: dict[str, src.shapes.Shape] = {}
+
+    for i, tshape in enumerate(TSHAPES):
+        shape = tshape()
+        shapes[tshape.__name__] = shape
+
+        theta = 2 * numpy.pi * i / len(TSHAPES)
+        shape.setCoord(
+            pos=pyrr.Vector3(
+                [
+                    numpy.cos(theta) * len(TSHAPES) / 2,
+                    0.0,
+                    numpy.sin(theta) * len(TSHAPES) / 2,
+                ],
+                dtype=numpy.single
+            ),
+            rot=pyrr.Vector3([0.0, 0.0, theta], dtype=numpy.single),
+            size=pyrr.Vector3([1.0, 1.0, 1.0], dtype=numpy.single)
+        )
+
+    node = src.shapes.Node(shader_name="scene", mesh_name="cube")
+    node.addElements(**shapes)
+
+    renderer.scene.addElements(node=node, ground=src.shapes.basics.Square())
+    renderer.scene.elements["ground"].setCoord(
+        pos=pyrr.Vector3([0.0, -3.0, 0.0], dtype=numpy.single),
+        size=pyrr.Vector3([src.utils.FAR * 2, 1.0, src.utils.FAR * 2], dtype=numpy.single)
+    )
 
 
 def loopWork(
@@ -96,8 +136,53 @@ def loopWork(
         renderer (src.Renderer): The renderer instance.
         delta_time (float): The elapsed time since the last frame (in second).
     """
-    # TODO
-    pass
+    node = renderer.scene.elements["node"]
+
+    if not isinstance(node, src.shapes.Node):
+        raise TypeError("Expected node to be of type src.shapes.Node")
+
+    theta = 2 * numpy.pi * (time.perf_counter_ns() - renderer.start) / 2e10
+    node.setCoord(
+        pos=pyrr.Vector3(
+            [
+                numpy.cos(theta) * 10,
+                0.0,
+                numpy.sin(theta) * 10,
+            ],
+            dtype=numpy.single
+        )
+    )
+    node.rotate(pyrr.Vector3([0.0, 0.0, delta_time], dtype=numpy.single))
+    node.scale(pyrr.Vector3([1 + delta_time * 0.01] * 3, dtype=numpy.single))
+
+    for i, tshape in enumerate(TSHAPES):
+        element = node.children[tshape.__name__]
+        element.setCoord(
+            pos=pyrr.Vector3(
+                [
+                    element.pos[0],
+                    (element.pos[1] + (delta_time if i // 3 else 0.0)) % 3.0,
+                    element.pos[2]
+                ],
+                dtype=numpy.single
+            ),
+            size=pyrr.Vector3(
+                [
+                    max(0.25, (element.size[0] + (delta_time if i % 2 else 0.0)) % 3.0),
+                    max(0.25, (element.size[1] + (delta_time if i % 2 else 0.0)) % 3.0),
+                    max(0.25, (element.size[2] + (delta_time if i % 2 else 0.0)) % 3.0)
+                ],
+                dtype=numpy.single
+            )
+        )
+        element.rotate(pyrr.Vector3(
+            [
+                delta_time if i % 3 == 2 else 0.0,
+                delta_time if i % 3 == 1 else 0.0,
+                delta_time if i % 3 == 0 else 0.0
+            ],
+            dtype=numpy.single
+        ))
 
 
 def main() -> None:
