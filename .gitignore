@@ -1,0 +1,12 @@
+*
+!.gitignore
+!LICENSE
+!README.md
+!requirements.txt
+!main.py
+!assets
+!assets/**
+!src
+!src/**
+**/__pycache__/
+**/__pycache__/**
