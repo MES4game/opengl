@@ -16,6 +16,8 @@ import os
 import typing
 import time
 # pip imports
+import numpy
+import pyrr  # type: ignore
 import glfw  # type: ignore
 import OpenGL.GL as GL  # type: ignore
 # local imports
@@ -79,8 +81,8 @@ def initWork(
         renderer (src.Renderer): The renderer instance.
     """
     renderer.start = time.perf_counter_ns()
-    # TODO
-    pass
+
+    renderer.scene.addElements(human=src.shapes.Shape(shader_name="scene", mesh_name="human"))
 
 
 def loopWork(
@@ -96,8 +98,7 @@ def loopWork(
         renderer (src.Renderer): The renderer instance.
         delta_time (float): The elapsed time since the last frame (in second).
     """
-    # TODO
-    pass
+    renderer.scene.elements["human"].rotate(pyrr.Vector3([0.0, 0.0, delta_time], dtype=numpy.single))
 
 
 def main() -> None:
