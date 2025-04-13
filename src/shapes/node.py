@@ -232,6 +232,7 @@ class Node(Shape):
             parent_size=parent_size
         )
 
+        # TODO: fix error here : children are not rendered correctly (they have not the good rotation)
         for_child_pos = self.pos if parent_pos is None else (self.pos + parent_pos)
         for_child_rot = self.rot if parent_rot is None else (self.rot + parent_rot)
         for_child_size = self.size if parent_size is None else (self.size * parent_size)
