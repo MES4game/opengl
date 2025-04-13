@@ -120,7 +120,7 @@ class Mesh(Ressource):
                     current_vn = current_vn.add(numpy.fromstring(line[3:], dtype=numpy.single, count=3, sep=' '))
                     nb_vn += 1
                 elif line.startswith("f "):
-                    nb_f += 1
+                    nb_f += len(line[2:].split()[:4]) - 2
 
         positions: tnumpy.NDArray[numpy.single] = numpy.empty((nb_v * 3,), dtype=numpy.single)
         for i in range(nb_v):
@@ -172,12 +172,29 @@ class Mesh(Ressource):
                 if len(line) < 19 or line[0] != 'f' or line[1] != ' ':
                     continue
 
-                parts = line[2:].split()[:3]
+                parts = line[2:].split()[:4]
 
-                if len(parts) != 3:
+                if len(parts) < 3:
                     continue
 
-                for i, part in enumerate(parts):
+                if len(parts) == 4:
+                    for i, part in enumerate((parts[0], parts[3], parts[2])):
+                        pos_idx, tex_idx, norm_idx = [int(idx) - 1 for idx in part.split('/', 3)[:3]]
+                        key = (pos_idx, tex_idx, norm_idx)
+
+                        if key not in index_map:
+                            index_map[key] = current_index
+                            vertices[current_index * 8:current_index * 8 + 8] = numpy.array([
+                                *positions[pos_idx * 3:pos_idx * 3 + 3],
+                                *texcoords[tex_idx * 2:tex_idx * 2 + 2],
+                                *normals[norm_idx * 3:norm_idx * 3 + 3],
+                            ], dtype=numpy.single)
+                            current_index += 1
+
+                        indices[parsed * 3 + i] = index_map[key]
+                    parsed += 1
+
+                for i, part in enumerate((parts[0], parts[1], parts[2])):
                     pos_idx, tex_idx, norm_idx = [int(idx) - 1 for idx in part.split('/', 3)[:3]]
                     key = (pos_idx, tex_idx, norm_idx)
 
