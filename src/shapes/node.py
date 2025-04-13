@@ -118,6 +118,30 @@ class Node(Shape):
                         self.children.pop(key)
                         break
 
+    def moveChildren(
+            self: typing.Self,
+            /,
+            *,
+            rot_matrix: pyrr.Matrix33 | None = None,
+            delta_size: pyrr.Vector3 | None = None
+            ) -> None:
+        """
+        Move children of the node according to the given rotation matrix and size.\n
+
+        Parameters:
+            rot_matrix (pyrr.Matrix33 | None): The rotation matrix to use for moving the children. If None, it is not used.
+            delta_size (pyrr.Vector3 | None): The size to use for moving the children. If None, it is not used.
+        """
+        for child in self.children.values():
+            if rot_matrix is not None:
+                child.setCoord(pos=pyrr.Vector3(rot_matrix @ child.pos))
+
+            if delta_size is not None:
+                child.setCoord(pos=pyrr.Vector3(child.pos * delta_size))
+
+            if isinstance(child, Node):
+                child.moveChildren(rot_matrix=rot_matrix, delta_size=delta_size)
+
     def setCoord(
             self: typing.Self,
             /,
@@ -142,13 +166,15 @@ class Node(Shape):
 
         super().setCoord(pos=pos, rot=rot, size=size)
 
-        delta_rot = self.rot - old_rot
-        rot_matrix = pyrr.Matrix33.from_eulers(pyrr.euler.create(*(delta_rot * [1.0, 1.0, -1.0]), dtype=numpy.single))
-        delta_size = self.size / old_size
+        if rot is None and size is None:
+            return
 
-        for child in self.children.values():
-            child.setCoord(pos=pyrr.Vector3(rot_matrix @ child.pos))
-            child.setCoord(pos=pyrr.Vector3(child.pos * delta_size))
+        self.moveChildren(
+            rot_matrix=pyrr.Matrix33.from_eulers(
+                pyrr.euler.create(*((self.rot - old_rot) * [1.0, 1.0, -1.0]), dtype=numpy.single)
+            ) if rot is not None else None,
+            delta_size=(self.size / old_size) if size is not None else None
+        )
 
     def rotate(
             self: typing.Self,
@@ -165,9 +191,7 @@ class Node(Shape):
         """
         super().rotate(delta)
 
-        rot_matrix = pyrr.Matrix33.from_eulers(pyrr.euler.create(*(delta * [1.0, 1.0, -1.0]), dtype=numpy.single))
-        for child in self.children.values():
-            child.setCoord(pos=pyrr.Vector3(rot_matrix @ child.pos))
+        self.moveChildren(rot_matrix=pyrr.Matrix33.from_eulers(pyrr.euler.create(*(delta * [1.0, 1.0, -1.0]), dtype=numpy.single)))
 
     def scale(
             self: typing.Self,
@@ -184,8 +208,7 @@ class Node(Shape):
         """
         super().scale(value)
 
-        for child in self.children.values():
-            child.setCoord(pos=pyrr.Vector3(child.pos * value))
+        self.moveChildren(delta_size=value)
 
     def updateModelMatrix(
             self: typing.Self,
