@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 cube module
 ===========
-This module contains the `Cube` class, which is a subclass of `Shape`.
-It represents a cube shape in a 3D scene.\n
+Package: `basics`
 
-By default, the cube is initialized with a shader name of `"scene"` and a mesh name of `"cube"`.
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Cube`
 """
 
 
@@ -13,24 +15,40 @@ By default, the cube is initialized with a shader name of `"scene"` and a mesh n
 import typing
 # pip imports
 # local imports
-from . import Shape
+from . import Shape, Node
 
 
 class Cube(Shape):
     """
-    Parent class: `Shape`\n
+    Cube class
+    ==========
+    Parent class: `Shape`
 
-    The `Cube` class is a subclass of the `Shape` class.
-    It represents a cube shape in a 3D scene.
+    Class to/that # TODO: set docstring
     """
+    @typing.override
     def __init__(
             self: typing.Self,
-            /
+            parent: Node | None = None,
+            /,
+            *,
+            texture_name: str = "",
+            has_light: bool = False
             ) -> None:
         """
-        Initializes the `Cube` object.\n
+        Method to/that # TODO: set docstring
 
-        It initializes the cube shape with a shader and mesh name.
-        The shader name is set to `"scene"` and the mesh name is set to `"cube"`.
+        Args:
+            parent (`Node | None`): Parent of this shape, if it is inside a graph.
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+            has_light (`bool`): If this shape use lights.
+        Raises:
+            # TODO: set exceptions
         """
-        super().__init__(shader_name="scene", mesh_name="cube")
+        super().__init__(
+            parent,
+            shader_name="scene",
+            mesh_name="cube",
+            texture_name=texture_name,
+            has_light=has_light
+        )

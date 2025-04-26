@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 triangle module
-===========
-This module contains the `Triangle` class, which is a subclass of `Shape`.
-It represents a triangle shape in a 3D scene.\n
+===============
+Package: `basics`
 
-By default, the triangle is initialized with a shader name of `"scene"` and a mesh name of `"triangle"`.
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Triangle`
 """
 
 
@@ -13,24 +15,40 @@ By default, the triangle is initialized with a shader name of `"scene"` and a me
 import typing
 # pip imports
 # local imports
-from . import Shape
+from . import Shape, Node
 
 
 class Triangle(Shape):
     """
-    Parent class: `Shape`\n
+    Triangle class
+    ==============
+    Parent class: `Shape`
 
-    The `Triangle` class is a subclass of the `Shape` class.
-    It represents a triangle shape in a 3D scene.
+    Class to/that # TODO: set docstring
     """
+    @typing.override
     def __init__(
             self: typing.Self,
-            /
+            parent: Node | None = None,
+            /,
+            *,
+            texture_name: str = "",
+            has_light: bool = False
             ) -> None:
         """
-        Initializes the `Triangle` object.\n
+        Method to/that # TODO: set docstring
 
-        It initializes the triangle shape with a shader and mesh name.
-        The shader name is set to `"scene"` and the mesh name is set to `"triangle"`.
+        Args:
+            parent (`Node | None`): Parent of this shape, if it is inside a graph.
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+            has_light (`bool`): If this shape use lights.
+        Raises:
+            # TODO: set exceptions
         """
-        super().__init__(shader_name="scene", mesh_name="triangle")
+        super().__init__(
+            parent,
+            shader_name="scene",
+            mesh_name="triangle",
+            texture_name=texture_name,
+            has_light=has_light
+        )

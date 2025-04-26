@@ -1,37 +1,45 @@
-# -*- coding: utf-8 -*-
 """
 utils module
 ============
-This module contains utility globals, functions and classes for the project.\n
+Package: `src`
 
-It is used to manage paths, extensions, key bindings and other constants.\n
+Module to/that # TODO: set docstring
 
-Here are the classes of this module:
-- RelPath: This class contains the relative paths of the project.
-- AbsPath: This class contains the absolute paths of the project.
-- Extensions: This class contains the extensions for the files used in the project.
-- KeyBinds: This class contains the key bindings for the project.
-
-Here are the global variables of this module:
-- REL_PATH: This variable contains the relative paths of the project.
-- ABS_PATH: This variable contains the absolute paths of the project.
-- EXTENSIONS: This variable contains the extensions for the files used in the project.
-- WINDOW_NAME: This variable contains the name of the window.
-- SCREEN_WIDTH: This variable contains the width of the window.
-- SCREEN_HEIGHT: This variable contains the height of the window.
-- NEAR: This variable contains the near plane distance.
-- FAR: This variable contains the far plane distance.
-- BORDER: This variable contains the border of the map.
-- PLAYER_SIZE: This variable contains the size of the player.
-- CURSOR_SPEED: This variable contains the speed of the cursor (mouse).
-- ZOOM_SPEED: This variable contains the speed of the zoom (fov).
-- MIN_ZOOM: This variable contains the minimum zoom (fov).
-- MAX_ZOOM: This variable contains the maximum zoom (fov).
-- MOVE_SPEED: This variable contains the speed of the player.
-- JUMP_HEIGHT: This variable contains the height of the jump.
-- SNEAK_HEIGHT: This variable contains the height of the sneak.
-- KEY_DICT: This variable contains the keys for the project.
-- KEY_BINDS: This variable contains the key bindings for the project.
+Classes
+-------
+- `RelPath`
+- `AbsPath`
+- `Extensions`
+- `KeyBinds`
+Globals
+-------
+- `YAW_AXIS`: Axis to do rotation for yaw angle.
+- `PITCH_AXIS`: Axis to do rotation for pitch angle.
+- `ROLL_AXIS`: Axis to do rotation for roll angle.
+- `ONE_DEG_RAD`: One degree converted to radians.
+- `TWO_PI`: `math.pi * 2`.
+- `REL_PATH`: Relative paths used for making absolute path.
+- `ABS_PATH`: Absolute paths used for finding folders.
+- `EXTENSIONS`: Extensions used for files.
+- `WINDOW_NAME`: Name displayed for the window.
+- `SCREEN_WIDTH`: Width of the window to display.
+- `SCREEN_HEIGHT`: Height of the window to display.
+- `NEAR`: Distance from wich objects are considered near.
+- `FAR`: Distance from wich objects are considered far.
+- `BORDER`: Size of the map.
+- `BACK_COLOR`: Background color of the scene (sky color).
+- `PLAYER_SIZE`: Size of the player in the scene.
+- `CAM_SPEED`: Angle speed when moving camera.
+- `MIN_CAM_PITCH`: Minimum pitch angle for camera.
+- `MAX_CAM_PITCH`: Maximum pitch angle for camera.
+- `ZOOM_SPEED`: Angle speed when zooming in/out.
+- `MIN_ZOOM`: Minimum angle when zooming in.
+- `MAX_ZOOM`: Maximum angle when zooming out.
+- `MOVE_SPEED`: Move speed of player.
+- `FLY_JUMP_HEIGHT`: Height delta when jumping while flying.
+- `FLY_SNEAK_HEIGHT`: Height delta when sneaking while flying.
+- `KEY_DICT`: Contains every keys.
+- `KEY_BINDS`: Contains every actions with their key binded.
 """
 
 
@@ -39,7 +47,9 @@ Here are the global variables of this module:
 import os
 import typing
 import dataclasses
+import math
 # pip imports
+import pyglm.glm as glm
 import glfw  # type: ignore
 # local imports
 
@@ -47,44 +57,47 @@ import glfw  # type: ignore
 @dataclasses.dataclass
 class RelPath:
     """
-    This class contains the relative paths of the project.
-    It is used to manage the paths of the project.\n
+    RelPath class
+    =============
 
-    It contains the following attributes:
-    - src: This attribute contains the name of the src folder (in root).
-    - assets: This attribute contains the name of the assets folder (in root).
-    - shaders: This attribute contains the name of the shaders folder (in assets).
-    - meshes: This attribute contains the name of the meshes folder (in assets).
-    - materials: This attribute contains the name of the materials folder (in assets).
-    - textures: This attribute contains the name of the textures folder (in assets).
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        src (`str`): relative path (without './' at start) for `src` folder from root of project.
+        assets (`str`): relative path (without './' at start) for `assets` folder from root of project.
+        shaders (`str`): relative path (without './' at start) for `shaders` folder from `assets` folder.
+        meshes (`str`): relative path (without './' at start) for `meshes` folder from `assets` folder.
+        textures (`str`): relative path (without './' at start) for `textures` folder from `assets` folder.
     """
     src: str = "src"
     assets: str = "assets"
     shaders: str = "shaders"
     meshes: str = "meshes"
-    materials: str = "materials"
     textures: str = "textures"
 
 
 @dataclasses.dataclass
 class AbsPath:
     """
-    This class contains the absolute paths of the project.
-    It is used to manage the paths of the project.\n
+    AbsPath class
+    =============
 
-    It contains the following attributes:
-    - root: This attribute contains the root path of the project.
-    - src: This attribute contains the absolute path of the src folder.
-    - shaders: This attribute contains the absolute path of the shaders folder.
-    - meshes: This attribute contains the absolute path of the meshes folder.
-    - materials: This attribute contains the absolute path of the materials folder.
-    - textures: This attribute contains the absolute path of the textures folder.
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        root (`str`): absolute path for root of project.
+        src (`str`): absolute path for `src` folder.
+        shaders (`str`): absolute path for `shaders` folder.
+        meshes (`str`): absolute path for `meshes` folder.
+        textures (`str`): absolute path for `textures` folder.
+    Methods
+    -------
+    - `updatePath`
     """
     root: str = os.path.dirname(os.path.abspath(__file__))
     src: str = ""
     shaders: str = ""
     meshes: str = ""
-    materials: str = ""
     textures: str = ""
 
     def __post_init__(
@@ -92,8 +105,7 @@ class AbsPath:
             /
             ) -> None:
         """
-        Build the absolute paths of the project.
-        This function is called after the object is created.
+        Method to/that # TODO: set docstring
         """
         self.updatePath()
 
@@ -102,87 +114,163 @@ class AbsPath:
             /
             ) -> None:
         """
-        Update the absolute paths of the project.
+        Method to/that # TODO: set docstring
         """
         self.src = os.path.join(self.root, REL_PATH.src)
         self.shaders = os.path.join(self.root, REL_PATH.assets, REL_PATH.shaders)
         self.meshes = os.path.join(self.root, REL_PATH.assets, REL_PATH.meshes)
-        self.materials = os.path.join(self.root, REL_PATH.assets, REL_PATH.materials)
         self.textures = os.path.join(self.root, REL_PATH.assets, REL_PATH.textures)
 
 
 @dataclasses.dataclass
 class Extensions:
     """
-    This class contains the extensions for the files used in the project.
-    It is used to manage the extensions of the files used in the project.\n
+    Extensions class
+    ================
 
-    It contains the following attributes:
-    - shader_vert: This attribute contains the extension of the vertex shader files.
-    - shader_frag: This attribute contains the extension of the fragment shader files.
-    - mesh: This attribute contains the extension of the mesh files.
-    - material: This attribute contains the extension of the material files.
-    - texture: This attribute contains the extension of the texture files.
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        shader_vert (`str`): extension for vertex shader.
+        shader_frag (`str`): extension for fragment shader.
+        mesh (`str`): extension for mesh.
+        texture (`str`): extension for texture.
     """
     shader_vert: str = ".vert.glsl"
     shader_frag: str = ".frag.glsl"
     mesh: str = ".obj"
-    material: str = ".mtl"
     texture: str = ".png"
+
+
+class KeyDoubleDict:
+    """
+    KeyDoubleDict class
+    ===================
+
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        __str_dict (`dict[str, int]`): dict that bind strings to a key number.
+        __int_dict (`dict[int, str]`): dict that bind key numbers to a str.
+    Methods
+    -------
+    - `get`
+    """
+    def __init__(
+            self: typing.Self,
+            default: dict[str, int],
+            /
+            ) -> None:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            default (`dict[str, int]`): default dict that links strings to keys.
+        """
+        self.__str_dict: dict[str, int] = {}
+        self.__int_dict: dict[int, str] = {}
+
+        for key, value in default.items():
+            self.__str_dict[key] = value
+            self.__int_dict[value] = key
+
+    @typing.overload
+    def get(self: typing.Self, key: int, /) -> str:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            key (`int`): the key number from wich to get a string.
+        Returns:
+            `str`: the string linked to the key number.
+        """
+        ...
+
+    @typing.overload
+    def get(self: typing.Self, key: str, /) -> int:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            key (`str`): the string from wich to get a key number.
+        Returns:
+            `int`: the key number linked to the string.
+        """
+        ...
+
+    def get(
+            self: typing.Self,
+            key: int | str,
+            /
+            ) -> str | int:
+        if isinstance(key, int):
+            return self.__int_dict.get(key, "")
+        return self.__str_dict.get(key, -1)
 
 
 class KeyBinds:
     """
-    This class contains the key bindings for the project.
-    It is used to manage the key bindings of the project.\n
+    KeyBinds class
+    ==============
 
-    It contains the following attributes:
-    - move_forward: This attribute contains the key for moving forward.
-    - move_backward: This attribute contains the key for moving backward.
-    - move_left: This attribute contains the key for moving left.
-    - move_right: This attribute contains the key for moving right.
-    - jump: This attribute contains the key for jumping.
-    - sneak: This attribute contains the key for sneaking.
-    - escape: This attribute contains the key for escaping.
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        move_forward (`int`): Key for move forward action.
+        move_backward (`int`): Key for move backward action.
+        move_left (`int`): Key for move left action.
+        move_right (`int`): Key for move right action.
+        jump (`int`): Key for jump action.
+        sneak (`int`): Key for sneak action.
+        escape (`int`): Key for escape action.
     """
     def __init__(
             self: typing.Self,
             /
             ) -> None:
         """
-        Build the key bindings for the project.
+        Method to/that # TODO: set docstring
         """
-        self.move_forward: int = KEY_DICT.get("W", 256)
-        self.move_backward: int = KEY_DICT.get("S", 256)
-        self.move_left: int = KEY_DICT.get("A", 256)
-        self.move_right: int = KEY_DICT.get("D", 256)
-        self.jump: int = KEY_DICT.get("SPACE", 256)
-        self.sneak: int = KEY_DICT.get("LSHIFT", 256)
-        self.escape: int = KEY_DICT.get("ESCAPE", 256)
+        self.move_forward: int = KEY_DICT.get("W")
+        self.move_backward: int = KEY_DICT.get("S")
+        self.move_left: int = KEY_DICT.get("A")
+        self.move_right: int = KEY_DICT.get("D")
+        self.jump: int = KEY_DICT.get("SPACE")
+        self.sneak: int = KEY_DICT.get("LSHIFT")
+        self.escape: int = KEY_DICT.get("ESCAPE")
 
+
+YAW_AXIS: glm.vec3 = glm.vec3(0, 1, 0)
+PITCH_AXIS: glm.vec3 = glm.vec3(0, 0, 1)
+ROLL_AXIS: glm.vec3 = glm.vec3(1, 0, 0)
+ONE_DEG_RAD: float = math.pi / 180
+TWO_PI: float = math.pi * 2
 
 REL_PATH: RelPath = RelPath()
 ABS_PATH: AbsPath = AbsPath()
 EXTENSIONS: Extensions = Extensions()
 
-WINDOW_NAME: str = "OpenGL"
+WINDOW_NAME: str = "PyOpenGL"
 SCREEN_WIDTH: int = 1280
 SCREEN_HEIGHT: int = 720
 NEAR: float = 0.1
 FAR: float = 50.0
 
 BORDER: float = 250.0
+BACK_COLOR: tuple[float, ...] = (0.5, 0.7, 1.0, 1.0)
 PLAYER_SIZE: float = 1.8
 
-CURSOR_SPEED: float = 0.1
-ZOOM_SPEED: float = 3.0
-MIN_ZOOM: float = 10.0
-MAX_ZOOM: float = 90.0
+CAM_SPEED: float = ONE_DEG_RAD / 10
+MIN_CAM_PITCH: float = -math.pi / 2 + ONE_DEG_RAD
+MAX_CAM_PITCH: float = math.pi / 2 - ONE_DEG_RAD
+ZOOM_SPEED: float = ONE_DEG_RAD * 3
+MIN_ZOOM: float = ONE_DEG_RAD * 10
+MAX_ZOOM: float = ONE_DEG_RAD * 90
 MOVE_SPEED: float = 5.0
-JUMP_HEIGHT: float = 3.0
-SNEAK_HEIGHT: float = 3.0
+FLY_JUMP_HEIGHT: float = 3.0
+FLY_SNEAK_HEIGHT: float = 3.0
 
-KEY_DICT: dict[str, int] = {
+KEY_DICT: KeyDoubleDict = KeyDoubleDict({
     "A": glfw.KEY_A,
     "B": glfw.KEY_B,
     "C": glfw.KEY_C,
@@ -224,6 +312,7 @@ KEY_DICT: dict[str, int] = {
     "ENTER": glfw.KEY_ENTER,
     "TAB": glfw.KEY_TAB,
     "LSHIFT": glfw.KEY_LEFT_SHIFT,
-    "LCTRL": glfw.KEY_LEFT_CONTROL
-}
+    "LCTRL": glfw.KEY_LEFT_CONTROL,
+    # TODO: add more keys
+})
 KEY_BINDS: KeyBinds = KeyBinds()

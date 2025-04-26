@@ -1,173 +1,179 @@
-# -*- coding: utf-8 -*-
 """
 mesh module
 ===========
-This module contains the `Mesh` class, which is used to load and compile meshes for OpenGL rendering.\n
+Package: `ressources`
 
-It creates the `Mesh` class as a subclass of `Ressource`, which is a base class for all resources in the application.\n
+Module to/that # TODO: set docstring
 
-The `Mesh` class has methods to load mesh data from a file, create vertex and index buffers, and clean up resources when the object is deleted.
+Classes
+-------
+- `MeshParseData`
+- `Mesh`
 """
 
 
 # built-in imports
 import os
 import typing
+import dataclasses
 # pip imports
-import numpy
-import numpy.typing as tnumpy
+import pyglm.glm as glm
 import OpenGL.GL as GL  # type: ignore
 # local imports
 from . import utils, Ressource
 
 
-class LineInfo:
+@dataclasses.dataclass
+class MeshParseData:
     """
-    This class is used to store the information of a line in a mesh file.
-    The `add` method is used to add a new line to the linked list, and the `aft` attribute is used to point to the next line.
-    The `values` attribute is used to store the values of the line.\n
+    MeshParseData class
+    ===================
+
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        # TODO: set attributes
     """
-    def __init__(
+    positions: glm.array[GL.ctypes.c_float]
+    texcoords: glm.array[GL.ctypes.c_float]
+    normals: glm.array[GL.ctypes.c_float]
+    nb: int
+
+    def __post_init__(
             self: typing.Self,
             /
             ) -> None:
         """
-        Initialize the `LineInfo` object.\n
+        Method to/that # TODO: set docstring
 
-        The `aft` attribute is set to `self`, and the `values` attribute is set to `None`.
+        Raises:
+            # TODO: set exceptions
         """
-        self.aft = self
-        self.values = None
-
-    def add(
-            self: typing.Self,
-            values: tnumpy.NDArray[numpy.single],
-            /
-            ) -> typing.Self:
-        """
-        Add a new line to the linked list.\n
-
-        The `values` attribute is set to the values passed as an argument, and the `aft` attribute is set a new line that we create.\n
-
-        Parameters:
-            values (tnumpy.NDArray[numpy.single]): The values to add to the linked list.
-
-        Returns:
-            typing.Self: The next line in the linked list that has been created.
-        """
-        self.values = values
-        self.aft: typing.Self = self.__class__()
-
-        return self.aft
+        self.vertices: glm.array[GL.ctypes.c_float] = glm.array.zeros(self.nb * 24, GL.ctypes.c_float)
+        self.indices: glm.array[GL.ctypes.c_uint32] = glm.array.zeros(self.nb * 3, GL.ctypes.c_uint32)
+        self.index_map: dict[tuple[int, int, int], GL.ctypes.c_uint32] = {}
+        self.current_index: int = 0
+        self.parsed: int = 0
 
 
 class Mesh(Ressource):
     """
-    Parent class: `Ressource`\n
+    Mesh class
+    ==========
+    Parent class: `Ressource`
 
-    Class to load a mesh for OpenGL.\n
+    Class to/that # TODO: set docstring
 
-    If you instantiate the class with a mesh name, it will load the mesh from the file and create the vertex array and vertex/index buffers.
-    If you instantiate the class with `mesh_name=""`, it will create empty buffers.\n
-
-    When the object is deleted, it will delete the vertex array and vertex/index buffers.\n
+    Attributes:
+        # TODO: set attributes
+    Methods
+    -------
+    - `__parseForArray` (staticmethod)
+    - `__addToBuffers` (staticmethod)
+    - `__parseForBuffers` (staticmethod)
+    - `loadMesh` (staticmethod)
     """
-    @classmethod
-    def loadMesh(
-            cls: type[typing.Self],
-            mesh_name: str,
+    @staticmethod
+    def __parseForArray(
+            src: str,
+            nb: int,
+            pos: int,
+            start: str,
+            size: int,
             /
-            ) -> tuple[tnumpy.NDArray[numpy.single], tnumpy.NDArray[numpy.uint32]]:
+            ) -> glm.array[GL.ctypes.c_float]:
         """
-        Load a mesh from a file.\n
+        Method to/that # TODO: set docstring
 
-        This method reads the mesh file and extracts the vertex, texture coordinate, normal and face data.
-        It also returns them as vertex and index arrays.\n
-
-        Here is the format of the mesh file:
-        - Lines starting with `v` are vertex positions (3 floats): v x y z.
-        - Lines starting with `vt` are texture coordinates (2 floats): vt u v.
-        - Lines starting with `vn` are vertex normals (3 floats): vn nx ny nz.
-        - Lines starting with `f` are faces (3 vertex indices, starting at 1 and not 0): f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3.\n
-
-        Parameters:
-            mesh_name (str): The name of the mesh file to load (without extension).
-
+        Args:
+            src (`str`): Absolute path for mesh.
+            nb (`int`): Number of element to parse.
+            pos (`int`): Descriptor in the file.
+            start (`str`): Start of lines to parse.
+            size (`int`): Numbers of element to parse per line.
         Returns:
-            tnumpy.NDArray[numpy.single],tnumpy.NDArray[numpy.uint32]: A tuple containing the vertex and index arrays.\n
-
-            The vertex array contains the vertex positions, texture coordinates, and normals like that `(x, y, z, u, v, nx, ny, nz)`.
-            The index array contains the indices of the vertices in the vertex array.
+            `glm.array[GL.ctypes.c_float]`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
         """
-        nb_v = nb_vt = nb_vn = nb_f = 0
-        current_v: LineInfo = LineInfo()
-        current_vt: LineInfo = LineInfo()
-        current_vn: LineInfo = LineInfo()
+        res: glm.array[GL.ctypes.c_float] = glm.array.zeros(nb * 3, GL.ctypes.c_float)
 
-        lines_v: LineInfo = current_v
-        lines_vt: LineInfo = current_vt
-        lines_vn: LineInfo = current_vn
-
-        with open(os.path.join(utils.ABS_PATH.meshes, mesh_name + utils.EXTENSIONS.mesh), 'r') as file:
-            for line in file:
-                if line.startswith("v "):
-                    current_v = current_v.add(numpy.fromstring(line[2:], dtype=numpy.single, count=3, sep=' '))
-                    nb_v += 1
-                elif line.startswith("vt "):
-                    current_vt = current_vt.add(numpy.fromstring(line[3:], dtype=numpy.single, count=2, sep=' '))
-                    nb_vt += 1
-                elif line.startswith("vn "):
-                    current_vn = current_vn.add(numpy.fromstring(line[3:], dtype=numpy.single, count=3, sep=' '))
-                    nb_vn += 1
-                elif line.startswith("f "):
-                    nb_f += len(line[2:].split()[:4]) - 2
-
-        positions: tnumpy.NDArray[numpy.single] = numpy.empty((nb_v * 3,), dtype=numpy.single)
-        for i in range(nb_v):
-            if lines_v.values is None:
-                break
-            positions[i * 3:i * 3 + 3] = lines_v.values
-            if lines_v.aft is lines_v:
-                break
-            lines_v = lines_v.aft
-        del lines_v
-        del current_v
-
-        texcoords: tnumpy.NDArray[numpy.single] = numpy.empty((nb_vt * 2,), dtype=numpy.single)
-        for i in range(nb_vt):
-            if lines_vt.values is None:
-                break
-            texcoords[i * 2:i * 2 + 2] = lines_vt.values
-            if lines_vt.aft is lines_vt:
-                break
-            lines_vt = lines_vt.aft
-        del lines_vt
-        del current_vt
-
-        normals: tnumpy.NDArray[numpy.single] = numpy.empty((nb_vn * 3,), dtype=numpy.single)
-        for i in range(nb_vn):
-            if lines_vn.values is None:
-                break
-            normals[i * 3:i * 3 + 3] = lines_vn.values
-            if lines_vn.aft is lines_vn:
-                break
-            lines_vn = lines_vn.aft
-        del lines_vn
-        del current_vn
-
-        size1: int = nb_f * 3
-        size2: int = size1 * 8
         parsed: int = 0
+        min_len: int = len(start.strip()) + size * 2
 
-        current_index: numpy.uint32 = numpy.uint32(0)
-        index_map: dict[tuple[int, int, int], numpy.uint32] = {}
+        with open(src, "r") as file:
+            file.seek(pos)
 
-        vertices: tnumpy.NDArray[numpy.single] = numpy.empty((size2,), dtype=numpy.single)
-        indices: tnumpy.NDArray[numpy.uint32] = numpy.empty((size1,), dtype=numpy.uint32)
-
-        with open(os.path.join(utils.ABS_PATH.meshes, mesh_name + utils.EXTENSIONS.mesh), 'r') as file:
             for line in file:
-                if parsed >= nb_f:
+                if parsed >= nb:
+                    break
+                if len(line) < min_len or not line.startswith(start):
+                    continue
+
+                res[parsed * size:parsed * size + size] = glm.array(list(map(GL.ctypes.c_float, map(float, line[len(start):].split(maxsplit=size)[:size]))))
+
+                parsed += 1
+
+        return res
+
+    @staticmethod
+    def __addToBuffers(
+            data: MeshParseData,
+            vertices: tuple[str, str, str],
+            /
+            ) -> None:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            data (`MeshParseData`): Data for mesh.
+            vertices (`tuple[str, str, str]`): Vertices of the face.
+        Raises:
+            # TODO: set exceptions
+        """
+        for i, part in enumerate(vertices):
+            pos_idx, tex_idx, norm_idx = [int(idx) - 1 for idx in part.split('/', 3)[:3]]
+            key = (pos_idx, tex_idx, norm_idx)
+
+            if key not in data.index_map:
+                data.index_map[key] = GL.ctypes.c_uint32(data.current_index)
+                data.vertices[data.current_index * 8:data.current_index * 8 + 8] = glm.array(
+                    list(map(GL.ctypes.c_float, [
+                        *data.positions[pos_idx * 3:pos_idx * 3 + 3],
+                        *data.texcoords[tex_idx * 2:tex_idx * 2 + 2],
+                        *data.normals[norm_idx * 3:norm_idx * 3 + 3],
+                    ]))
+                )
+                data.current_index += 1
+
+            data.indices[data.parsed * 3 + i] = data.index_map[key]
+
+        data.parsed += 1
+
+    @staticmethod
+    def __parseForBuffers(
+            src: str,
+            pos: int,
+            data: MeshParseData,
+            /
+            ) -> tuple[glm.array[GL.ctypes.c_float], glm.array[GL.ctypes.c_uint32]]:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            src (`str`): Absolute path for mesh.
+            pos (`int`): Descriptor in the file.
+            data (`MeshParseData`): Data for mesh.
+        Returns:
+            `tuple[glm.array[GL.ctypes.c_float],glm.array[GL.ctypes.c_uint32]]`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
+        """
+        with open(src, 'r') as file:
+            file.seek(pos)
+
+            for line in file:
+                if data.parsed >= data.nb:
                     break
                 if len(line) < 19 or line[0] != 'f' or line[1] != ' ':
                     continue
@@ -177,79 +183,100 @@ class Mesh(Ressource):
                 if len(parts) < 3:
                     continue
 
+                Mesh.__addToBuffers(data, (parts[0], parts[1], parts[2]))
+
                 if len(parts) == 4:
-                    for i, part in enumerate((parts[0], parts[3], parts[2])):
-                        pos_idx, tex_idx, norm_idx = [int(idx) - 1 for idx in part.split('/', 3)[:3]]
-                        key = (pos_idx, tex_idx, norm_idx)
+                    Mesh.__addToBuffers(data, (parts[0], parts[3], parts[2]))
 
-                        if key not in index_map:
-                            index_map[key] = current_index
-                            vertices[current_index * 8:current_index * 8 + 8] = numpy.array([
-                                *positions[pos_idx * 3:pos_idx * 3 + 3],
-                                *texcoords[tex_idx * 2:tex_idx * 2 + 2],
-                                *normals[norm_idx * 3:norm_idx * 3 + 3],
-                            ], dtype=numpy.single)
-                            current_index += 1
+        return data.vertices[0:data.current_index * 8], data.indices
 
-                        indices[parsed * 3 + i] = index_map[key]
-                    parsed += 1
+    @staticmethod
+    def loadMesh(
+            src: str,
+            /
+            ) -> tuple[glm.array[GL.ctypes.c_float], glm.array[GL.ctypes.c_uint32]]:
+        """
+        Method to/that # TODO: set docstring
 
-                for i, part in enumerate((parts[0], parts[1], parts[2])):
-                    pos_idx, tex_idx, norm_idx = [int(idx) - 1 for idx in part.split('/', 3)[:3]]
-                    key = (pos_idx, tex_idx, norm_idx)
+        Args:
+            src (`str`): Absolute path for mesh.
+        Returns:
+            `tuple[glm.array[GL.ctypes.c_float],glm.array[GL.ctypes.c_uint32]]`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
+        """
+        nb_v = nb_vt = nb_vn = nb_f = 0
+        pos_v = pos_vt = pos_vn = pos_f = -1
 
-                    if key not in index_map:
-                        index_map[key] = current_index
-                        vertices[current_index * 8:current_index * 8 + 8] = numpy.array([
-                            *positions[pos_idx * 3:pos_idx * 3 + 3],
-                            *texcoords[tex_idx * 2:tex_idx * 2 + 2],
-                            *normals[norm_idx * 3:norm_idx * 3 + 3],
-                        ], dtype=numpy.single)
-                        current_index += 1
+        min_len_v: int = 7
+        min_len_vt: int = 6
+        min_len_vn: int = 8
 
-                    indices[parsed * 3 + i] = index_map[key]
+        with open(src, 'r') as file:
+            while True:
+                pos = file.tell()
+                line = file.readline()
 
-                parsed += 1
+                if not line:
+                    break
 
-        return vertices[0:current_index * 8], indices
+                if len(line) >= min_len_v and line.startswith("v "):
+                    if not nb_v:
+                        pos_v = pos
+                    nb_v += 1
+                elif len(line) >= min_len_vt and line.startswith("vt "):
+                    if not nb_vt:
+                        pos_vt = pos
+                    nb_vt += 1
+                elif len(line) >= min_len_vn and line.startswith("vn "):
+                    if not nb_vn:
+                        pos_vn = pos
+                    nb_vn += 1
+                elif len(line) >= 19 and line.startswith("f "):
+                    if not nb_f:
+                        pos_f = pos
+                    nb_f += len(line[2:].split()[:4]) - 2
+
+        data: MeshParseData = MeshParseData(
+            positions=Mesh.__parseForArray(src, nb_v, pos_v, "v ", 3),
+            texcoords=Mesh.__parseForArray(src, nb_vt, pos_vt, "vt ", 2),
+            normals=Mesh.__parseForArray(src, nb_vn, pos_vn, "vn ", 3),
+            nb=nb_f
+        )
+
+        return Mesh.__parseForBuffers(src, pos_f, data)
 
     def __init__(
             self: typing.Self,
-            /,
-            *,
             mesh_name: str = "",
+            /
             ) -> None:
         """
-        Initialize the `Mesh` object.\n
+        Method to/that # TODO: set docstring
 
-        If the `mesh_name` is not empty, it will load the mesh from the file and create the vertex array and vertex/index buffers.
-        If the `mesh_name` is empty, it will create empty buffers.\n
-
-        Parameters:
-            mesh_name (str): The name of the mesh file to load (without extension).
+        Args:
+            mesh_name (`str`): File name of the mesh (without extension and relative to `meshes` folder).
+        Raises:
+            # TODO: set exceptions
         """
         super().__init__(mesh_name=mesh_name)
 
-        if mesh_name == "":
-            self.vertices = numpy.empty((0,), dtype=numpy.single)
-            self.indices = numpy.empty((0,), dtype=numpy.uint32)
-        else:
-            self.vertices, self.indices = self.__class__.loadMesh(mesh_name)
+        self.vertices, self.indices = self.__class__.loadMesh(os.path.join(utils.ABS_PATH.meshes, mesh_name + utils.EXTENSIONS.mesh))
 
-        self.vao = GL.glGenVertexArrays(1)
-        self.vbo = GL.glGenBuffers(1)
-        self.ibo = GL.glGenBuffers(1)
+        self.vao: typing.Any = GL.glGenVertexArrays(1)
+        self.vbo: typing.Any = GL.glGenBuffers(1)
+        self.ibo: typing.Any = GL.glGenBuffers(1)
 
         GL.glBindVertexArray(self.vao)
 
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL.GL_STATIC_DRAW)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices.ptr, GL.GL_STATIC_DRAW)
 
         GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.ibo)
-        GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, self.indices.nbytes, self.indices, GL.GL_STATIC_DRAW)
+        GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, self.indices.nbytes, self.indices.ptr, GL.GL_STATIC_DRAW)
 
-        type_bytes = GL.ctypes.sizeof(GL.ctypes.c_float)
-        stride = 8 * type_bytes
+        type_bytes: int = GL.ctypes.sizeof(GL.ctypes.c_float)
+        stride: int = 8 * type_bytes
         GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, stride, GL.ctypes.c_void_p(0))
         GL.glEnableVertexAttribArray(0)
         GL.glVertexAttribPointer(1, 2, GL.GL_FLOAT, GL.GL_FALSE, stride, GL.ctypes.c_void_p(3 * type_bytes))
@@ -257,16 +284,26 @@ class Mesh(Ressource):
         GL.glVertexAttribPointer(2, 3, GL.GL_FLOAT, GL.GL_FALSE, stride, GL.ctypes.c_void_p(5 * type_bytes))
         GL.glEnableVertexAttribArray(2)
 
-    def __del__(
+        GL.glBindVertexArray(0)
+
+    def clean(
             self: typing.Self,
             /
-            ) -> None:
+            ) -> int:
         """
-        Delete the `Mesh` object.\n
+        Method to/that # TODO: set docstring
 
-        This method deletes the vertex array and vertex/index buffers.
+        Returns:
+            `int`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
         """
-        super().__del__()
+        if super().clean():
+            return 1
 
         GL.glDeleteVertexArrays(1, (self.vao,))
         GL.glDeleteBuffers(2, (self.vbo, self.ibo))
+        del self.indices
+        del self.vertices
+
+        return 0

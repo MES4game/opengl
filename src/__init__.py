@@ -1,18 +1,25 @@
-# -*- coding: utf-8 -*-
 """
-source package
-==============
-This package contains the source code of the OpenGL project.\n
+src package
+===========
 
-It contains the following modules:
-- utils: utility globals, functions and classes for the project.
-- ressources: load and manage the resources of the project (shaders, meshes, etc.).
-- shapes: classes to create and manage the shapes of the project (Shape, Node, etc.).
+Package to/that # TODO: set docstring
 
-It contains the following classes:
-- Scene: class to manage the scene of the project (every displayed elements/shapes).
-- Camera: class to manage the camera of the project (FPSCamera, FreeCamera, OrbitCamera, TPSCamera).
-- Renderer: class to manage everything related to the rendering of the project (window, camera, scene, etc.).
+Sub-packages
+------------
+- `ressources`
+- `shapes`
+Modules
+-------
+- `utils`
+Classes
+-------
+- `Scene`
+- `Camera`
+- `FPSCamera`
+- `FreeCamera`
+- `OrbitCamera`
+- `TPSCamera`
+- `Renderer`
 """
 
 

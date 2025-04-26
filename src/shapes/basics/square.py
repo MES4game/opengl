@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 square module
-===========
-This module contains the `Square` class, which is a subclass of `Shape`.
-It represents a square shape in a 3D scene.\n
+=============
+Package: `basics`
 
-By default, the square is initialized with a shader name of `"scene"` and a mesh name of `"square"`.
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Square`
 """
 
 
@@ -13,24 +15,40 @@ By default, the square is initialized with a shader name of `"scene"` and a mesh
 import typing
 # pip imports
 # local imports
-from . import Shape
+from . import Shape, Node
 
 
 class Square(Shape):
     """
-    Parent class: `Shape`\n
+    Square class
+    ============
+    Parent class: `Shape`
 
-    The `Square` class is a subclass of the `Shape` class.
-    It represents a square shape in a 3D scene.
+    Class to/that # TODO: set docstring
     """
+    @typing.override
     def __init__(
             self: typing.Self,
-            /
+            parent: Node | None = None,
+            /,
+            *,
+            texture_name: str = "",
+            has_light: bool = False
             ) -> None:
         """
-        Initializes the `Square` object.\n
+        Method to/that # TODO: set docstring
 
-        It initializes the square shape with a shader and mesh name.
-        The shader name is set to `"scene"` and the mesh name is set to `"square"`.
+        Args:
+            parent (`Node | None`): Parent of this shape, if it is inside a graph.
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+            has_light (`bool`): If this shape use lights.
+        Raises:
+            # TODO: set exceptions
         """
-        super().__init__(shader_name="scene", mesh_name="square")
+        super().__init__(
+            parent,
+            shader_name="scene",
+            mesh_name="square",
+            texture_name=texture_name,
+            has_light=has_light
+        )

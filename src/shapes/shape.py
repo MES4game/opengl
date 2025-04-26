@@ -1,18 +1,20 @@
-# -*- coding: utf-8 -*-
 """
 shape module
 ============
-This module contains the `Shape` class, which is a base class for all elements to render in the scene.\n
+Package: `shapes`
 
-It contains the methods to set the position, rotation and size of the shape, as well as the methods to render it.
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Shape`
 """
 
 
 # built-in imports
 import typing
 # pip imports
-import numpy
-import pyrr  # type: ignore
+import pyglm.glm as glm
 import OpenGL.GL as GL  # type: ignore
 # local imports
 from . import utils, ressources
@@ -22,211 +24,309 @@ if typing.TYPE_CHECKING:
 
 class Shape:
     """
-    Class to represent a shape in the scene.\n
+    Shape class
+    ===========
 
-    It contains the methods to set the position, rotation and size of the shape, as well as the methods to render it.
-    It also contains the methods to set the material and the texture of the shape.
-    There is also a method to switch the light of the shape on and off.\n
+    Class to/that # TODO: set docstring
 
-    It is a base class for all elements to render in the scene.
+    Attributes:
+        # TODO: set attributes
+    Methods
+    -------
+    - `setShader`
+    - `setMesh`
+    - `setTexture`
+    - `switchLight`
+    - `setCoord`
+    - `move`
+    - `rotate`
+    - `scale`
+    - `updateModelMatrix`
+    - `render`
+    - `cleanRessources`
     """
     def __init__(
             self: typing.Self,
+            parent: "Node | None" = None,
             /,
             *,
-            parent: "Node | None" = None,
             shader_name: str = "",
-            mesh_name: str = ""
+            mesh_name: str = "",
+            texture_name: str = "",
+            has_light: bool = False
             ) -> None:
         """
-        Initialize the `Shape` object.\n
+        Method to/that # TODO: set docstring
 
-        This method initializes the position, rotation and size of the shape, as well as the shader and the mesh to use for rendering.
-        It also initializes the material and the texture to None.\n
-
-        Parameters:
-            parent (Node | None): The parent of the shape. If None, the shape is not attached to any parent.
-            shader_name (str): The name of the shader file (without extension) to use for rendering the shape.
-            mesh_name (str): The name of the mesh file (without extension) to use for rendering the shape.
+        Args:
+            parent (`Node | None`): Parent of this shape, if it is inside a graph.
+            shader_name (`str`): File name of the shader (without extension and relative to `shaders` folder).
+            mesh_name (`str`): File name of the mesh (without extension and relative to `meshes` folder).
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+            has_light (`bool`): If this shape use lights.
+        Raises:
+            # TODO: set exceptions
         """
         self.parent: Node | None = parent
+        self.parent_key: str = ""
 
-        self.pos = pyrr.Vector3([0.0, 0.0, 0.0], dtype=numpy.single)
-        self.rot = pyrr.Vector3([0.0, 0.0, 0.0], dtype=numpy.single)
-        self.size = pyrr.Vector3([1.0, 1.0, 1.0], dtype=numpy.single)
+        self.pos: glm.vec3 = glm.vec3(0)
+        self.rot: glm.vec3 = glm.vec3(0)
+        self.size: glm.vec3 = glm.vec3(1)
 
-        self.shader = ressources.Shader(shader_name=shader_name)
-        self.mesh = ressources.Mesh(mesh_name=mesh_name)
-        self.has_light = False
-        self.material = None
-        self.texture = None
+        self.shader: ressources.Shader | None = None
+        self.mesh: ressources.Mesh | None = None
+        self.texture: ressources.Texture | None = None
+        self.has_light: bool = False
+
+        self.model: glm.mat4x4 = glm.mat4x4()
+
+        self.to_update: bool = True
+        self.to_render: bool = True
+
+        self.setShader(shader_name)
+        self.setMesh(mesh_name)
+        self.setTexture(texture_name)
+        self.switchLight(has_light)
 
         self.updateModelMatrix()
 
-    def switchLight(
+    def setShader(
             self: typing.Self,
+            shader_name: str = "",
             /
             ) -> None:
         """
-        Switch the light of the shape on and off.
-        """
-        self.has_light = not self.has_light
+        Method to/that # TODO: set docstring
 
-    def setMaterial(
+        Args:
+            shader_name (`str`): File name of the shader (without extension and relative to `shaders` folder).
+        Raises:
+            # TODO: set exceptions
+        """
+        if self.shader is not None:
+            self.shader.clean()
+
+        self.shader = None
+        try:
+            if shader_name:
+                self.shader = ressources.Shader(shader_name)
+                self.to_render = True
+        except Exception as e:
+            print(f"Error loading shader {shader_name}: {e}")
+            print("Setting shader to None.")
+
+    def setMesh(
             self: typing.Self,
-            material_name: str,
+            mesh_name: str = "",
             /
             ) -> None:
         """
-        # TODO
+        Method to/that # TODO: set docstring
+
+        Args:
+            mesh_name (`str`): File name of the mesh (without extension and relative to `meshes` folder).
+        Raises:
+            # TODO: set exceptions
         """
-        if self.material is not None:
-            del self.material
-        # TODO
-        self.material = ressources.Material()
+        if self.mesh is not None:
+            self.mesh.clean()
+
+        self.mesh = None
+        try:
+            if mesh_name:
+                self.mesh = ressources.Mesh(mesh_name)
+                self.to_update = True
+        except Exception as e:
+            print(f"Error loading mesh {mesh_name}: {e}")
+            print("Setting mesh to None.")
 
     def setTexture(
             self: typing.Self,
-            texture_name: str,
+            texture_name: str = "",
             /
             ) -> None:
         """
-        # TODO
+        Method to/that # TODO: set docstring
+
+        Args:
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+        Raises:
+            # TODO: set exceptions
         """
         if self.texture is not None:
-            del self.texture
-        # TODO
-        self.texture = ressources.Texture()
+            self.texture.clean()
+
+        self.texture = None
+        try:
+            if texture_name:
+                self.texture = ressources.Texture(texture_name)
+                self.to_render = True
+        except Exception as e:
+            print(f"Error loading texture {texture_name}: {e}")
+            print("Setting texture to None.")
+
+    def switchLight(
+            self: typing.Self,
+            value: bool | None = None,
+            /
+            ) -> None:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            value (`bool | None`): Value to set light, if None, just switch it.
+        Raises:
+            # TODO: set exceptions
+        """
+        self.has_light = value if value is not None else not self.has_light
 
     def setCoord(
             self: typing.Self,
             /,
             *,
-            pos: pyrr.Vector3 | None = None,
-            rot: pyrr.Vector3 | None = None,
-            size: pyrr.Vector3 | None = None
+            pos: glm.vec3 | None = None,
+            rot: glm.vec3 | None = None,
+            size: glm.vec3 | None = None
             ) -> None:
         """
-        Set the position, rotation and/or size of the shape.\n
+        Method to/that # TODO: set docstring
 
-        It clips the position of the shape to be between -`utils.BORDER` and `utils.BORDER`.
-        It wraps the rotation of the shape to be between `-2 * numpy.pi` and `2 * numpy.pi`.
-        It clips the size of the shape to be between `0.000001` and `utils.BORDER`.\n
-
-        Parameters:
-            pos (pyrr.Vector3 | None): The position of the shape. If None, the position is not changed.
-            rot (pyrr.Vector3 | None): The rotation of the shape. If None, the rotation is not changed.
-            size (pyrr.Vector3 | None): The size of the shape. If None, the size is not changed.
+        Args:
+            pos (`glm.vec3 | None`): New position of the shape.
+            rot (`glm.vec3 | None`): New rotation of the shape.
+            size (`glm.vec3 | None`): New size of the shape.
+        Raises:
+            # TODO: set exceptions
         """
         if pos is not None:
-            self.pos = pos
-            self.pos = pyrr.Vector3(numpy.clip(self.pos, -utils.BORDER, utils.BORDER), dtype=numpy.single)
+            self.pos = glm.clamp(pos, -utils.BORDER, utils.BORDER)
+            self.to_update = True
 
         if rot is not None:
-            self.rot = rot
-            self.rot = pyrr.Vector3(numpy.fmod(self.rot, 2 * numpy.pi), dtype=numpy.single)
+            self.rot = rot % utils.TWO_PI
+            self.to_update = True
 
         if size is not None:
-            self.size = size
-            self.size = pyrr.Vector3(numpy.clip(self.size, 0.000001, utils.BORDER), dtype=numpy.single)
+            self.size = glm.clamp(size, 0.000001, utils.BORDER)
+            self.to_update = True
 
     def move(
             self: typing.Self,
-            delta: pyrr.Vector3,
+            delta: glm.vec3,
             /
             ) -> None:
         """
-        Move the shape by the given delta.\n
+        Method to/that # TODO: set docstring
 
-        It clips the position of the shape to be between -`utils.BORDER` and `utils.BORDER`.\n
-
-        Parameters:
-            delta (pyrr.Vector3): The delta to move the shape by.
+        Args:
+            delta (`glm.vec3`): The movement to apply to shape.
+        Raises:
+            # TODO: set exceptions
         """
         self.pos += delta
-        self.pos = pyrr.Vector3(numpy.clip(self.pos, -utils.BORDER, utils.BORDER), dtype=numpy.single)
+        self.pos = glm.clamp(self.pos, -utils.BORDER, utils.BORDER)
+        self.to_update = True
 
     def rotate(
             self: typing.Self,
-            delta: pyrr.Vector3,
+            delta: glm.vec3,
             /
             ) -> None:
         """
-        Rotate the shape by the given delta.\n
+        Method to/that # TODO: set docstring
 
-        It wraps the rotation of the shape to be between `-2 * numpy.pi` and `2 * numpy.pi`.\n
-
-        Parameters:
-            delta (pyrr.Vector3): The delta to rotate the shape by.
+        Args:
+            delta (`glm.vec3`): The rotation to apply to shape.
+        Raises:
+            # TODO: set exceptions
         """
         self.rot += delta
-        self.rot = pyrr.Vector3(numpy.fmod(self.rot, 2 * numpy.pi), dtype=numpy.single)
+        self.rot = self.rot % utils.TWO_PI
+        self.to_update = True
 
     def scale(
             self: typing.Self,
-            value: pyrr.Vector3,
+            value: glm.vec3,
             /
             ) -> None:
         """
-        Scale the shape by the given value.\n
+        Method to/that # TODO: set docstring
 
-        It clips the size of the shape to be between `0.000001` and `utils.BORDER`.\n
-
-        Parameters:
-            value (pyrr.Vector3): The value to scale the shape by.
+        Args:
+            value (`glm.vec3`): The scale to apply to shape.
+        Raises:
+            # TODO: set exceptions
         """
         self.size *= value
-        self.size = pyrr.Vector3(numpy.clip(self.size, 0.000001, utils.BORDER), dtype=numpy.single)
+        self.size = glm.clamp(self.size, 0.000001, utils.BORDER)
+        self.to_update = True
 
     def updateModelMatrix(
             self: typing.Self,
+            forced: bool = False,
             /,
             *,
-            parent_pos: pyrr.Vector3 | None = None,
-            parent_rot: pyrr.Vector3 | None = None,
-            parent_size: pyrr.Vector3 | None = None
+            parent_pos: glm.vec3 | None = None,
+            parent_rot: glm.vec3 | None = None,
+            parent_size: glm.vec3 | None = None
             ) -> None:
         """
-        Update the model matrix of the shape.\n
+        Method to/that # TODO: set docstring
 
-        Parameters:
-            parent_pos (pyrr.Vector3 | None): The position of the parent shape. If None, it is not used.
-            parent_rot (pyrr.Vector3 | None): The rotation of the parent shape. If None, it is not used.
-            parent_size (pyrr.Vector3 | None): The size of the parent shape. If None, it is not used.
+        Args:
+            forced (`bool`): If we are forced to recalculate model matrix.
+            parent_pos (`glm.vec3 | None`): Parent position to transform relative position to an absolute position.
+            parent_rot (`glm.vec3 | None`): Parent rotation to transform relative rotation to an absolute position.
+            parent_size (`glm.vec3 | None`): Parent size to transform relative size to an absolute position.
+        Raises:
+            # TODO: set exceptions
         """
-        trans_matrix = pyrr.Matrix44.from_translation(self.pos if parent_pos is None else (self.pos + parent_pos), dtype=numpy.single)
-        rot_matrix = pyrr.Matrix44.from_eulers(self.rot if parent_rot is None else (self.rot + parent_rot), dtype=numpy.single)
-        size_matrix = pyrr.Matrix44.from_scale(self.size if parent_size is None else (self.size * parent_size), dtype=numpy.single)
+        if not (self.to_update or forced):
+            return
 
-        self.model = trans_matrix * rot_matrix * size_matrix
+        self.model = glm.mat4x4()
+
+        self.model = glm.translate(self.model, self.pos if parent_pos is None else (self.pos + parent_pos))
+
+        rot: glm.vec3 = self.rot if parent_rot is None else (self.rot + parent_rot)
+        self.model *= glm.mat4_cast(glm.angleAxis(rot.x, utils.YAW_AXIS) * glm.angleAxis(rot.y, utils.PITCH_AXIS) * glm.angleAxis(rot.z, utils.ROLL_AXIS))  # type: ignore
+
+        self.model = glm.scale(self.model, self.size if parent_size is None else (self.size * parent_size))
+
+        self.to_update = False
+        self.to_render = True
 
     def render(
             self: typing.Self,
-            view: pyrr.Matrix44,
-            projection: pyrr.Matrix44,
+            view: glm.mat4x4,
+            proj: glm.mat4x4,
+            forced: bool = False,
             /
             ) -> None:
         """
-        Render the shape using the shader and the mesh.\n
+        Method to/that # TODO: set docstring
 
-        Parameters:
-            view (pyrr.Matrix44): The view matrix to use for rendering.
-            projection (pyrr.Matrix44): The projection matrix to use for rendering.
+        Args:
+            view (`glm.mat4x4`): View matrix of camera to use for render.
+            proj (`glm.mat4x4`): Projection matrix of camera to use for render.
+            forced (`bool`): If we are forced to render.
+        Raises:
+            # TODO: set exceptions
         """
-        if self.shader.program is None or self.mesh.vertices.size == 0:
+        if self.shader is None or self.mesh is None:
+            return
+        if not (self.to_render or forced):
             return
 
         GL.glUseProgram(self.shader.program)
 
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "model"), 1, GL.GL_FALSE, self.model)
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "view"), 1, GL.GL_FALSE, view)
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "projection"), 1, GL.GL_FALSE, projection)
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "model"), 1, GL.GL_FALSE, glm.value_ptr(self.model))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "view"), 1, GL.GL_FALSE, glm.value_ptr(view))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "projection"), 1, GL.GL_FALSE, glm.value_ptr(proj))
 
         GL.glBindVertexArray(self.mesh.vao)
 
-        if self.material is not None:
-            # TODO
-            pass
         if self.texture is not None:
             # TODO
             pass
@@ -236,19 +336,39 @@ class Shape:
 
         GL.glDrawElements(GL.GL_TRIANGLES, len(self.mesh.indices), GL.GL_UNSIGNED_INT, None)
 
+        GL.glBindVertexArray(0)
+        GL.glUseProgram(0)
+
+        self.to_render = False
+
+    def __del__(
+            self: typing.Self,
+            /
+            ) -> None:
+        """
+        Method to/that # TODO: set docstring
+
+        Raises:
+            # TODO: set exceptions
+        """
+        self.cleanRessources()
+
     def cleanRessources(
             self: typing.Self,
             /
             ) -> None:
         """
-        Delete all the ressources used by the shape.
-        This includes the shader, the mesh, the material and the texture.
-        It also removes the shape from its parent if it has one.
+        Method to/that # TODO: set docstring
+
+        Raises:
+            # TODO: set exceptions
         """
-        del self.texture
-        del self.material
-        del self.mesh
-        del self.shader
+        if self.texture is not None:
+            self.texture.clean()
+        if self.mesh is not None:
+            self.mesh.clean()
+        if self.shader is not None:
+            self.shader.clean()
 
         if self.parent is not None:
             self.parent.subElements(self)

@@ -1,14 +1,21 @@
-# -*- coding: utf-8 -*-
 """
-objects package
-===============
-This package contains shape classes.\n
+shapes package
+==============
+Parent package: `src`
 
-The classes in this package are:
-- `Shape`: A class representing a generic shape.
-- `Node`: A class that extends the `Shape` class to represent a shape with children.
+Package to/that # TODO: set docstring
 
-It also loads the package `basics` which contains the basic shape classes.
+Sub-packages
+------------
+- `basics`
+Modules
+-------
+- `utils` (from parent package)
+- `ressources` (from parent package)
+Classes
+-------
+- `Shape`
+- `Node`
 """
 
 

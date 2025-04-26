@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 renderer module
 ===============
-This module contains the `Renderer` class, which is responsible for everything related to rendering (including objects or movement).\n
+Package: `src`
 
-It handles the GLFW window, the camera, and the scene. It also handles the input callbacks for the keyboard and mouse.
-It is the main class of the application.
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Renderer`
 """
 
 
@@ -13,41 +15,84 @@ It is the main class of the application.
 import typing
 # pip imports
 import glfw  # type: ignore
+import OpenGL.GL as GL  # type: ignore
 # local imports
 from . import utils, Scene, Camera, FPSCamera
 
 
 class Renderer:
     """
-    The `Renderer` class is responsible for rendering the scene and handling input.\n
+    Renderer class
+    ==============
 
-    What it does:
-    - It initializes the camera and the scene.
-    - It handles the input callbacks for the keyboard and mouse.
-    - It updates the camera and scene matrices.
-    - It renders the scene.
-    - It cleans the resources when quitting.
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        # TODO: set attributes
+    Methods
+    -------
+    - `keyCallback`
+    - `mouseCallback`
+    - `scrollCallback`
+    - `updateMatrices`
+    - `render`
+    - `quit`
     """
+    @staticmethod
+    def initGlfw() -> typing.Any:
+        """
+        Method to/that # TODO: set docstring
+
+        Returns:
+            `typing.Any`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
+        """
+        if not glfw.init():
+            raise Exception("Failed to initialize GLFW")
+
+        window: typing.Any = glfw.create_window(utils.SCREEN_WIDTH, utils.SCREEN_HEIGHT, utils.WINDOW_NAME, None, None)
+
+        if not window:
+            glfw.terminate()
+            raise Exception("Failed to create GLFW window")
+
+        glfw.make_context_current(window)
+        glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
+        glfw.set_cursor_pos(window, utils.SCREEN_WIDTH / 2, utils.SCREEN_HEIGHT / 2)
+
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glClearColor(*(utils.BACK_COLOR[:4]))
+
+        print(
+            f"OpenGL: {GL.glGetString(GL.GL_VERSION)},",
+            f"GLSL: {GL.glGetString(GL.GL_SHADING_LANGUAGE_VERSION)},",
+            f"Renderer: {GL.glGetString(GL.GL_RENDERER)},",
+            f"Vendor: {GL.glGetString(GL.GL_VENDOR)}"
+        )
+
+        return window
+
     def __init__(
             self: typing.Self,
-            window: typing.Any,
             camera: type[Camera] = FPSCamera,
             /
             ) -> None:
         """
-        Initializes the Renderer class.
+        Method to/that # TODO: set docstring
 
-        Parameters:
-            window (typing.Any): The GLFW window.
-            camera (type[camera.Camera]): The camera class to use. Defaults to `camera.FPSCamera`.
+        Args:
+            camera (`type[Camera]`): the camera type to use. Default to `FPSCamera`.
+        Raises:
+            # TODO: set exceptions
         """
-        self.window = window
-        self.camera = camera()
-        self.scene = Scene()
-        self.start = 0
+        self.window: typing.Any = Renderer.initGlfw()
+        self.camera: Camera = camera()
+        self.scene: Scene = Scene()
+        self.start: int = 0
 
-        glfw.set_cursor_pos_callback(window, self.mouseCallback)
-        glfw.set_scroll_callback(window, self.scrollCallback)
+        glfw.set_cursor_pos_callback(self.window, self.mouseCallback)
+        glfw.set_scroll_callback(self.window, self.scrollCallback)
 
     def keyCallback(
             self: typing.Self,
@@ -55,13 +100,12 @@ class Renderer:
             /
             ) -> None:
         """
-        Handles the keyboard input.\n
+        Method to/that # TODO: set docstring
 
-        It checks if the escape key is pressed and quits the application if it is.
-        Else, it calls the camera's handleKeyboard method to handle the input.\n
-
-        Parameters:
-            delta_time (float): The time since the last frame.
+        Args:
+            delta_time (`float`): the time elapsed since last frame in seconds.
+        Raises:
+            # TODO: set exceptions
         """
         if glfw.get_key(self.window, utils.KEY_BINDS.escape) == glfw.PRESS:
             self.quit()
@@ -77,14 +121,14 @@ class Renderer:
             /
             ) -> None:
         """
-        Handles the mouse input.\n
+        Method to/that # TODO: set docstring
 
-        It calls the camera's handleMouse method to handle the input.\n
-
-        Parameters:
-            win (typing.Any): The GLFW window.
-            mouse_x (float): The x position of the mouse.
-            mouse_y (float): The y position of the mouse.
+        Args:
+            win (`typing.Any`): The GLFW window from wich the callback was called.
+            mouse_x (`float`): The position of the mouse on x axis in the window.
+            mouse_y (`float`): The position of the mouse on y axis in the window.
+        Raises:
+            # TODO: set exceptions
         """
         self.camera.handleMouse(mouse_x, mouse_y)
 
@@ -96,51 +140,55 @@ class Renderer:
             /
             ) -> None:
         """
-        Handles the scroll input.\n
+        Method to/that # TODO: set docstring
 
-        It calls the camera's handleScroll method to handle the input.\n
-
-        Parameters:
-            win (typing.Any): The GLFW window.
-            delta_x (float): The x offset of the scroll.
-            delta_y (float): The y offset of the scroll.
+        Args:
+            win (`typing.Any`): The GLFW window from wich the callback was called.
+            delta_x (`float`): The delta of the wheel on x axis in the window.
+            delta_y (`float`): The delta of the wheel on y axis in the window.
+        Raises:
+            # TODO: set exceptions
         """
         self.camera.handleScroll(delta_x, delta_y)
 
     def updateMatrices(
             self: typing.Self,
+            forced: bool = False,
             /
             ) -> None:
         """
-        Updates the camera and scene matrices.\n
+        Method to/that # TODO: set docstring
 
-        It calls the camera's updateMatrices method to update the view and projection matrices.
-        It also calls the scene's updateModelMatrices method to update the model matrices of the objects in the scene.
+        Args:
+            forced (`bool`): If we are forced to recalculate model matrices.
+        Raises:
+            # TODO: set exceptions
         """
-        self.camera.updateMatrices()
-        self.scene.updateModelMatrices()
+        self.camera.updateMatrices(forced)
+        self.scene.updateModelMatrix(forced)
 
     def render(
             self: typing.Self,
             /
             ) -> None:
         """
-        Renders the scene.\n
+        Method to/that # TODO: set docstring
 
-        It calls the scene's render method to render the objects in the scene.
+        Raises:
+            # TODO: set exceptions
         """
-        self.scene.render(self.camera.view, self.camera.projection)
+        self.scene.render(self.camera.view, self.camera.proj, self.camera.to_render)
+        self.camera.to_render = False
 
     def quit(
             self: typing.Self,
             /
             ) -> None:
         """
-        Quits the application.\n
+        Method to/that # TODO: set docstring
 
-        It cleans the resources of the scene and sets the window to close.\n
-
-        It should be called when the escape key is pressed.
+        Raises:
+            # TODO: set exceptions
         """
         self.scene.cleanRessources()
         glfw.set_window_should_close(self.window, True)

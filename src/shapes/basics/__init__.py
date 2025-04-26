@@ -1,23 +1,25 @@
-# -*- coding: utf-8 -*-
 """
 basics package
 ==============
-This package contains basic shapes class.\n
+Parent package: `shapes`
 
-The classes in this package are:
-- `Triangle`: A class representing a triangle shape.
-- `Square`: A class representing a square shape.
-- `Cube`: A class representing a cube shape.
-- `Pyramid`: A class representing a pyramid shape.
-- `Cone`: A class representing a cone shape.
-- `Cylinder`: A class representing a cylinder shape.
-- `Sphere`: A class representing a sphere shape.
+Package to/that # TODO: set docstring
 
-These classes are all subclasses of the `Shape` class, which is defined in the parent package.
+Classes
+-------
+- `Shape` (from parent package)
+- `Node` (from parent package)
+- `Triangle`
+- `Square`
+- `Cube`
+- `Pyramid`
+- `Cone`
+- `Cylinder`
+- `Sphere`
 """
 
 
-from .. import Shape  # type: ignore # noqa: F401
+from .. import Shape, Node  # type: ignore # noqa: F401
 from .triangle import Triangle  # type: ignore # noqa: F401
 from .square import Square  # type: ignore # noqa: F401
 from .cube import Cube  # type: ignore # noqa: F401

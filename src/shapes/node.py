@@ -1,58 +1,81 @@
-# -*- coding: utf-8 -*-
 """
 node module
 ===========
-This module contains the `Node` class, which is a subclass of `Shape`.\n
+Package: `shapes`
 
-It is used to represent a node in the scene graph, which can have children shapes.
-It allows for hierarchical transformations, where the position, rotation and size of a node affect its children.
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Node`
 """
 
 
 # built-in imports
 import typing
 # pip imports
-import numpy
-import pyrr  # TODO # type: ignore
+import pyglm.glm as glm
 # local imports
-from . import Shape
+from . import utils, Shape
 
 
 class Node(Shape):
     """
-    Parent class: `Shape`\n
+    Node class
+    ==========
+    Parent class: `Shape`
 
-    Class to represent a node in the scene graph.\n
+    Class to/that # TODO: set docstring
 
-    It is used to represent a node in the scene graph, which can have children shapes.
-    It allows for hierarchical transformations, where the position, rotation and size of a node affect its children.\n
+    Attributes:
+        # TODO: set attributes
+    Methods
+    -------
+    - `addElements`
+    - `subElements`
+    - `moveChildren`
+    - `switchLight`
+    - `setCoord`
+    - `rotate`
+    - `scale`
+    - `updateModelMatrix`
+    - `render`
+    - `cleanRessources`
     """
+    @typing.override
     def __init__(
             self: typing.Self,
+            parent: typing.Self | None = None,
             /,
             *,
-            parent: typing.Self | None = None,
             shader_name: str = "",
-            mesh_name: str = ""
+            mesh_name: str = "",
+            texture_name: str = "",
+            has_light: bool = False
             ) -> None:
         """
-        Initialize the `Node` object.\n
+        Method to/that # TODO: set docstring
 
-        This method initializes the position, rotation and size of the node, as well as the shader and the mesh to use for rendering.
-        It also initializes the material and the texture to None.\n
-
-        It also initializes the children of the node to an empty dictionary.
-        And the number of unnamed children to 0.\n
-
-        Parameters:
-            parent (typing.Self | None): The parent of the node. If None, the node is not attached to any parent.
-            shader_name (str): The name of the shader file (without extension) to use for rendering the node.
-            mesh_name (str): The name of the mesh file (without extension) to use for rendering the node.
+        Args:
+            parent (`typing.Self | None`): Parent of this shape, if it is inside a graph.
+            shader_name (`str`): File name of the shader (without extension and relative to `shaders` folder).
+            mesh_name (`str`): File name of the mesh (without extension and relative to `meshes` folder).
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+            has_light (`bool`): If this node use lights.
+        Raises:
+            # TODO: set exceptions
         """
         self.children: dict[str, Shape] = {}
-        self._nb_no_name = 0
+        self.__nb_no_name: int = 0
+        self._is_scene: bool = False
 
-        super().__init__(parent=parent, shader_name=shader_name, mesh_name=mesh_name)
+        super().__init__(
+            parent,
+            shader_name=shader_name,
+            mesh_name=mesh_name,
+            texture_name=texture_name,
+            has_light=has_light
+        )
 
     def addElements(
             self: typing.Self,
@@ -61,58 +84,59 @@ class Node(Shape):
             **kwargs: Shape
             ) -> None:
         """
-        Add elements to the node.\n
+        Method to/that # TODO: set docstring
 
-        This method adds elements to the node, either by name or by position in `self.children`.\n
-
-        If the element is passed as a positional argument, it is added to `self.children` with the key `"no_name_{self._nb_no_name}"`.
-        The `_nb_no_name` attribute is incremented by 1.\n
-
-        If the element is passed as a keyword argument, it is added to `self.children` with the key it was passed.\n
-
-        Parameters:
-            args (tuple[Shape, ...]): The elements to add to the node.
-            kwargs (dict[str, Shape]): The elements to add to the node, with their names as keys.
+        Args:
+            *args (`Shape`): elements to add without a specific name.
+            **kwargs (`Shape`): elements to add with a specific name.
+        Raises:
+            # TODO: set exceptions
         """
         for element in args:
-            self.children[f"no_name_{self._nb_no_name}"] = element
-            self._nb_no_name += 1
-
             if element.parent is not None:
                 element.parent.subElements(element)
+
+            self.children[f"no_name_{self.__nb_no_name}"] = element
+            element.parent_key = f"no_name_{self.__nb_no_name}"
             element.parent = self
+            if not self._is_scene:
+                element.switchLight(self.has_light)
+            element.to_update = True
+
+            self.__nb_no_name += 1
 
         for name, element in kwargs.items():
             if name in self.children:
-                raise KeyError(f"'{name}' already exists in Node '{self}'.")
-            self.children[name] = element
+                print(f"Warning: '{name}' already exists in Node '{self.parent_key}'.")
+                continue
 
             if element.parent is not None:
                 element.parent.subElements(element)
+
+            self.children[name] = element
+            element.parent_key = name
             element.parent = self
+            if not self._is_scene:
+                element.switchLight(self.has_light)
+            element.to_update = True
 
     def subElements(
             self: typing.Self,
             /,
-            *args: str | Shape
+            *args: Shape
             ) -> None:
         """
-        Remove elements from the node.\n
+        Method to/that # TODO: set docstring
 
-        This method removes elements from the node, either by name or by item.\n
-
-        If the element is passed as a string, it is removed from `self.children` with the key it was passed.
-        If the element is passed as an item, it is removed from `self.children` by searching for it in the values of `self.children`.
-        If the element is not found, it is ignored.\n
-
-        Parameters:
-            args (tuple[str | Shape, ...]): The elements to remove from the node.
+        Args:
+            *args (`Shape`): elements to sub from this node.
+        Raises:
+            # TODO: set exceptions
         """
         for arg in args:
-            if isinstance(arg, str):
-                if arg in self.children:
-                    self.children.pop(arg)
-            else:
+            try:
+                self.children.pop(arg.parent_key)
+            except KeyError:
                 for key, value in self.children.items():
                     if value is arg:
                         self.children.pop(key)
@@ -120,46 +144,69 @@ class Node(Shape):
 
     def moveChildren(
             self: typing.Self,
-            /,
-            *,
-            rot_matrix: pyrr.Matrix33 | None = None,
-            delta_size: pyrr.Vector3 | None = None
+            rot_quat: glm.quat | None,
+            scale: glm.vec3 | None,
+            /
             ) -> None:
         """
-        Move children of the node according to the given rotation matrix and size.\n
+        Method to/that # TODO: set docstring
 
-        Parameters:
-            rot_matrix (pyrr.Matrix33 | None): The rotation matrix to use for moving the children. If None, it is not used.
-            delta_size (pyrr.Vector3 | None): The size to use for moving the children. If None, it is not used.
+        Args:
+            rot_quat (`glm.quat | None`): Rotation (as quaternion) applied to this node.
+            scale (`glm.vec3 | None`): Scale applied to this node.
+        Raises:
+            # TODO: set exceptions
         """
-        for child in self.children.values():
-            if rot_matrix is not None:
-                child.setCoord(pos=pyrr.Vector3(rot_matrix @ child.pos))
+        if rot_quat is None and scale is None:
+            return
 
-            if delta_size is not None:
-                child.setCoord(pos=pyrr.Vector3(child.pos * delta_size))
+        for child in self.children.values():
+            if rot_quat is not None:
+                child.setCoord(pos=glm.vec3(rot_quat * child.pos))
+
+            if scale is not None:
+                child.setCoord(pos=glm.vec3(child.pos * scale))
 
             if isinstance(child, Node):
-                child.moveChildren(rot_matrix=rot_matrix, delta_size=delta_size)
+                child.moveChildren(rot_quat, scale)
 
+    @typing.override
+    def switchLight(
+            self: typing.Self,
+            value: bool | None = None,
+            /
+            ) -> None:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            value (`bool | None`): Value to set light, if None, just switch it.
+        Raises:
+            # TODO: set exceptions
+        """
+        super().switchLight(value)
+
+        for child in self.children.values():
+            child.switchLight(self.has_light)
+
+    @typing.override
     def setCoord(
             self: typing.Self,
             /,
             *,
-            pos: pyrr.Vector3 | None = None,
-            rot: pyrr.Vector3 | None = None,
-            size: pyrr.Vector3 | None = None
+            pos: glm.vec3 | None = None,
+            rot: glm.vec3 | None = None,
+            size: glm.vec3 | None = None
             ) -> None:
         """
-        Set the coordinates of the node.\n
+        Method to/that # TODO: set docstring
 
-        This method sets the position, rotation and size of the node.
-        It also updates the position of the children of the node, if necessary.\n
-
-        Parameters:
-            pos (pyrr.Vector3 | None): The position of the node. If None, the position is not changed.
-            rot (pyrr.Vector3 | None): The rotation of the node. If None, the rotation is not changed.
-            size (pyrr.Vector3 | None): The size of the node. If None, the size is not changed.
+        Args:
+            pos (`glm.vec3 | None`): New position of the node.
+            rot (`glm.vec3 | None`): New rotation of the node.
+            size (`glm.vec3 | None`): New size of the node.
+        Raises:
+            # TODO: set exceptions
         """
         old_rot = self.rot
         old_size = self.size
@@ -169,109 +216,122 @@ class Node(Shape):
         if rot is None and size is None:
             return
 
+        delta_rot = self.rot - old_rot
         self.moveChildren(
-            rot_matrix=pyrr.Matrix33.from_eulers(
-                pyrr.euler.create(*((self.rot - old_rot) * [1.0, 1.0, -1.0]), dtype=numpy.single)
-            ) if rot is not None else None,
-            delta_size=(self.size / old_size) if size is not None else None
+            (glm.angleAxis(delta_rot.x, utils.YAW_AXIS) * glm.angleAxis(delta_rot.y, utils.PITCH_AXIS) * glm.angleAxis(delta_rot.z, utils.ROLL_AXIS)) if rot is not None else None,
+            (self.size / old_size) if size is not None else None
         )
 
+    @typing.override
     def rotate(
             self: typing.Self,
-            delta: pyrr.Vector3,
+            delta: glm.vec3,
             /
             ) -> None:
         """
-        Rotate the node by the given delta.\n
+        Method to/that # TODO: set docstring
 
-        This method updates the rotation of the node and the position of its children.\n
-
-        Parameters:
-            delta (pyrr.Vector3): The delta to rotate the node by.
+        Args:
+            delta (`glm.vec3`): The rotation to apply to node.
+        Raises:
+            # TODO: set exceptions
         """
         super().rotate(delta)
 
-        self.moveChildren(rot_matrix=pyrr.Matrix33.from_eulers(pyrr.euler.create(*(delta * [1.0, 1.0, -1.0]), dtype=numpy.single)))
+        self.moveChildren(glm.angleAxis(delta.x, utils.YAW_AXIS) * glm.angleAxis(delta.y, utils.PITCH_AXIS) * glm.angleAxis(delta.z, utils.ROLL_AXIS), None)
 
+    @typing.override
     def scale(
             self: typing.Self,
-            value: pyrr.Vector3,
+            value: glm.vec3,
             /
             ) -> None:
         """
-        Scale the node by the given value.\n
+        Method to/that # TODO: set docstring
 
-        This method updates the size of the node and the position of its children.\n
-
-        Parameters:
-            value (pyrr.Vector3): The value to scale the node by.
+        Args:
+            value (`glm.vec3`): The scale to apply to node.
+        Raises:
+            # TODO: set exceptions
         """
         super().scale(value)
 
-        self.moveChildren(delta_size=value)
+        self.moveChildren(None, value)
 
+    @typing.override
     def updateModelMatrix(
             self: typing.Self,
+            forced: bool = False,
             /,
             *,
-            parent_pos: pyrr.Vector3 | None = None,
-            parent_rot: pyrr.Vector3 | None = None,
-            parent_size: pyrr.Vector3 | None = None
+            parent_pos: glm.vec3 | None = None,
+            parent_rot: glm.vec3 | None = None,
+            parent_size: glm.vec3 | None = None
             ) -> None:
         """
-        Update the model matrix of the node and its children.\n
+        Method to/that # TODO: set docstring
 
-        Parameters:
-            parent_pos (pyrr.Vector3 | None): The position of the parent node. If None, it is not used.
-            parent_rot (pyrr.Vector3 | None): The rotation of the parent node. If None, it is not used.
-            parent_size (pyrr.Vector3 | None): The size of the parent node. If None, it is not used.
+        Args:
+            forced (`bool`): If we are forced to recalculate model matrix.
+            parent_pos (`glm.vec3 | None`): Parent position to transform relative position to an absolute position.
+            parent_rot (`glm.vec3 | None`): Parent rotation to transform relative rotation to an absolute position.
+            parent_size (`glm.vec3 | None`): Parent size to transform relative size to an absolute position.
+        Raises:
+            # TODO: set exceptions
         """
+        updated: bool = self.to_update or forced
         super().updateModelMatrix(
+            forced,
             parent_pos=parent_pos,
             parent_rot=parent_rot,
             parent_size=parent_size
         )
 
-        # TODO: fix error here : children are not rendered correctly (they have not the good rotation)
-        for_child_pos = self.pos if parent_pos is None else (self.pos + parent_pos)
-        for_child_rot = self.rot if parent_rot is None else (self.rot + parent_rot)
-        for_child_size = self.size if parent_size is None else (self.size * parent_size)
+        for_child_pos: glm.vec3 = self.pos if parent_pos is None else (self.pos + parent_pos)
+        for_child_rot: glm.vec3 = self.rot if parent_rot is None else (self.rot + parent_rot)
+        for_child_size: glm.vec3 = self.size if parent_size is None else (self.size * parent_size)
 
         for child in self.children.values():
             child.updateModelMatrix(
+                updated,
                 parent_pos=for_child_pos,
                 parent_rot=for_child_rot,
                 parent_size=for_child_size
             )
 
+    @typing.override
     def render(
             self: typing.Self,
-            view: pyrr.Matrix44,
-            projection: pyrr.Matrix44,
+            view: glm.mat4x4,
+            proj: glm.mat4x4,
+            forced: bool = False,
             /
             ) -> None:
         """
-        Render the node and its children.\n
+        Method to/that # TODO: set docstring
 
-        This method calls the `render` method of the parent class and then calls the `render` method of each child.\n
-
-        Parameters:
-            view (pyrr.Matrix44): The view matrix to use for rendering.
-            projection (pyrr.Matrix44): The projection matrix to use for rendering.
+        Args:
+            view (`glm.mat4x4`): View matrix of camera to use for render.
+            proj (`glm.mat4x4`): Projection matrix of camera to use for render.
+            forced (`bool`): If we are forced to render.
+        Raises:
+            # TODO: set exceptions
         """
-        super().render(view, projection)
+        super().render(view, proj, forced)
 
         for child in self.children.values():
-            child.render(view, projection)
+            child.render(view, proj, forced)
 
+    @typing.override
     def cleanRessources(
             self: typing.Self,
             /
             ) -> None:
         """
-        Clean the resources of the node and its children.\n
+        Method to/that # TODO: set docstring
 
-        This method calls the `cleanRessources` method of the parent class and then clears the children of the node.
+        Raises:
+            # TODO: set exceptions
         """
         for child in self.children.values():
             child.cleanRessources()

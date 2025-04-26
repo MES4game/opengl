@@ -1,10 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 texture module
-===============
-This module contains the `Texture` class, which is used to load and compile textures for OpenGL rendering.\n
+==============
+Package: `ressources`
 
-# TODO
+Module to/that # TODO: set docstring
+
+Classes
+-------
+- `Texture`
 """
 
 
@@ -17,28 +20,69 @@ from . import Ressource
 
 class Texture(Ressource):
     """
-    Parent class: `Ressource`\n
+    Texture class
+    =============
+    Parent class: `Ressource`
 
-    # TODO
+    Class to/that # TODO: set docstring
+
+    Attributes:
+        # TODO: set attributes
+    Methods
+    -------
+    - `loadTexture` (staticmethod)
     """
+    @staticmethod
+    def loadTexture(
+            src: str,
+            /
+            ) -> typing.Any:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            src (`str`): Absolute path for texture.
+        Returns:
+            `typing.Any`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
+        """
+        s: typing.Any = None
+        # TODO
+        return s
+
     def __init__(
             self: typing.Self,
+            texture_name: str = "",
             /
             ) -> None:
         """
-        # TODO
+        Method to/that # TODO: set docstring
+
+        Args:
+            texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
+        Raises:
+            # TODO: set exceptions
         """
-        super().__init__()
+        super().__init__(texture_name=texture_name)
 
         # TODO
 
-    def __del__(
+    def clean(
             self: typing.Self,
             /
-            ) -> None:
+            ) -> int:
         """
-        # TODO
+        Method to/that # TODO: set docstring
+
+        Returns:
+            `int`: # TODO: set return
+        Raises:
+            # TODO: set exceptions
         """
-        super().__del__()
+        if super().clean():
+            return 1
 
         # TODO
+
+        return 0
