@@ -14,10 +14,11 @@ Classes
 # built-in imports
 import typing
 # pip imports
+import pyglm.glm as glm
 import glfw  # type: ignore
 import OpenGL.GL as GL  # type: ignore
 # local imports
-from . import utils, Scene, Camera, FPSCamera
+from . import utils, shapes, Scene, Camera, FPSCamera
 
 
 class Renderer:
@@ -89,6 +90,8 @@ class Renderer:
         self.window: typing.Any = Renderer.initGlfw()
         self.camera: Camera = camera()
         self.scene: Scene = Scene()
+        self.skybox: shapes.Shape = shapes.Shape(shader_name="basic_tex", mesh_name="skybox", texture_name="skybox")
+        self.skybox.setCoord(size=glm.vec3(utils.FAR - 0.000001))
         self.start: int = 0
 
         glfw.set_cursor_pos_callback(self.window, self.mouseCallback)
@@ -166,6 +169,8 @@ class Renderer:
         """
         self.camera.updateMatrices(forced)
         self.scene.updateModelMatrix(forced)
+        self.skybox.setCoord(pos=self.camera.pos)
+        self.skybox.updateModelMatrix(forced)
 
     def render(
             self: typing.Self,
@@ -178,6 +183,7 @@ class Renderer:
             # TODO: set exceptions
         """
         self.scene.render(self.camera, self.camera.to_render)
+        self.skybox.render(self.camera, self.camera.to_render)
         self.camera.to_render = False
 
     def quit(
