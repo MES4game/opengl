@@ -17,7 +17,7 @@ import typing
 import pyglm.glm as glm
 import OpenGL.GL as GL  # type: ignore
 # local imports
-from . import utils, ressources
+from . import utils, ressources, Camera
 if typing.TYPE_CHECKING:
     from . import Node
 
@@ -52,6 +52,7 @@ class Shape:
             *,
             shader_name: str = "",
             mesh_name: str = "",
+            color: glm.vec3 | None = None,
             texture_name: str = "",
             has_light: bool = False
             ) -> None:
@@ -62,6 +63,7 @@ class Shape:
             parent (`Node | None`): Parent of this shape, if it is inside a graph.
             shader_name (`str`): File name of the shader (without extension and relative to `shaders` folder).
             mesh_name (`str`): File name of the mesh (without extension and relative to `meshes` folder).
+            color (`glm.vec3 | None`): Color of the node, if None, set to white by default.
             texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
             has_light (`bool`): If this shape use lights.
         Raises:
@@ -76,6 +78,7 @@ class Shape:
 
         self.shader: ressources.Shader | None = None
         self.mesh: ressources.Mesh | None = None
+        self.color: glm.vec3 = color if color is not None else glm.vec3(1, 1, 1)
         self.texture: ressources.Texture | None = None
         self.has_light: bool = False
 
@@ -140,6 +143,22 @@ class Shape:
         except Exception as e:
             print(f"Error loading mesh {mesh_name}: {e}")
             print("Setting mesh to None.")
+
+    def setColor(
+            self: typing.Self,
+            color: glm.vec3 | None = None,
+            /
+            ) -> None:
+        """
+        Method to/that # TODO: set docstring
+
+        Args:
+            color (`glm.vec3 | None`): Color of the node, if None, set to white by default.
+        Raises:
+            # TODO: set exceptions
+        """
+        self.color = color if color is not None else glm.vec3(1, 1, 1)
+        self.to_render = True
 
     def setTexture(
             self: typing.Self,
@@ -299,8 +318,7 @@ class Shape:
 
     def render(
             self: typing.Self,
-            view: glm.mat4x4,
-            proj: glm.mat4x4,
+            cam: Camera,
             forced: bool = False,
             /
             ) -> None:
@@ -308,8 +326,7 @@ class Shape:
         Method to/that # TODO: set docstring
 
         Args:
-            view (`glm.mat4x4`): View matrix of camera to use for render.
-            proj (`glm.mat4x4`): Projection matrix of camera to use for render.
+            cam (`Camera`): The camera to take pos, view and proj to render.
             forced (`bool`): If we are forced to render.
         Raises:
             # TODO: set exceptions
@@ -321,18 +338,22 @@ class Shape:
 
         GL.glUseProgram(self.shader.program)
 
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "model"), 1, GL.GL_FALSE, glm.value_ptr(self.model))
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "view"), 1, GL.GL_FALSE, glm.value_ptr(view))
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "projection"), 1, GL.GL_FALSE, glm.value_ptr(proj))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "model_mat4"), 1, GL.GL_FALSE, glm.value_ptr(self.model))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "view_mat4"), 1, GL.GL_FALSE, glm.value_ptr(cam.view))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "proj_mat4"), 1, GL.GL_FALSE, glm.value_ptr(cam.proj))
 
         GL.glBindVertexArray(self.mesh.vao)
 
         if self.texture is not None:
-            # TODO
-            pass
+            GL.glActiveTexture(GL.GL_TEXTURE0)  # Don't need to set it, every shapes are drawn after each other, maybe later if we want multiple textures for one shape
+            GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture.id)
+            GL.glUniform1i(GL.glGetUniformLocation(self.shader.program, "texture_2D"), 0)
+        else:
+            GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "color_vec3"), 1, glm.value_ptr(self.color))
+
         if self.has_light:
-            # TODO
-            pass
+            GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "cam_vec3"), 1, glm.value_ptr(cam.pos))
+            GL.glUniform3f(GL.glGetUniformLocation(self.shader.program, "light_vec3"), 1.0, 1.0, 1.0)
 
         GL.glDrawElements(GL.GL_TRIANGLES, len(self.mesh.indices), GL.GL_UNSIGNED_INT, None)
 

@@ -77,7 +77,7 @@ class Camera:
         self.fov: float = math.pi / 4
 
         self.front: glm.vec3 = glm.vec3(1, 0, 0)
-        self.right: glm.vec3 = glm.vec3(0, 0, -1)
+        self.right: glm.vec3 = glm.vec3(0, 0, 1)
         self.up: glm.vec3 = glm.vec3(0, 1, 0)
         self.world_up: glm.vec3 = glm.vec3(self.up)
 
@@ -105,11 +105,12 @@ class Camera:
             # TODO: set exceptions
         """
         pitch_cos: float = math.cos(self.pitch)
-        self.front = glm.normalize(glm.vec3(
+        self.front = glm.vec3(
             math.cos(self.yaw) * pitch_cos,
             math.sin(self.pitch),
             math.sin(self.yaw) * pitch_cos
-        ))
+        )
+        # TODO: do normalize by myself (because front and world_up are already normalized)
         self.right = glm.normalize(glm.cross(self.front, self.world_up))
         self.up = glm.normalize(glm.cross(self.right, self.front))
 

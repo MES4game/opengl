@@ -16,7 +16,7 @@ import typing
 # pip imports
 import pyglm.glm as glm
 # local imports
-from . import utils, Shape
+from . import utils, Camera, Shape
 
 
 class Node(Shape):
@@ -50,6 +50,7 @@ class Node(Shape):
             *,
             shader_name: str = "",
             mesh_name: str = "",
+            color: glm.vec3 | None = None,
             texture_name: str = "",
             has_light: bool = False
             ) -> None:
@@ -60,6 +61,7 @@ class Node(Shape):
             parent (`typing.Self | None`): Parent of this shape, if it is inside a graph.
             shader_name (`str`): File name of the shader (without extension and relative to `shaders` folder).
             mesh_name (`str`): File name of the mesh (without extension and relative to `meshes` folder).
+            color (`glm.vec3 | None`): Color of the node, if None, set to white by default.
             texture_name (`str`): File name of the texture (without extension and relative to `textures` folder).
             has_light (`bool`): If this node use lights.
         Raises:
@@ -73,6 +75,7 @@ class Node(Shape):
             parent,
             shader_name=shader_name,
             mesh_name=mesh_name,
+            color=color,
             texture_name=texture_name,
             has_light=has_light
         )
@@ -302,8 +305,7 @@ class Node(Shape):
     @typing.override
     def render(
             self: typing.Self,
-            view: glm.mat4x4,
-            proj: glm.mat4x4,
+            cam: Camera,
             forced: bool = False,
             /
             ) -> None:
@@ -311,16 +313,15 @@ class Node(Shape):
         Method to/that # TODO: set docstring
 
         Args:
-            view (`glm.mat4x4`): View matrix of camera to use for render.
-            proj (`glm.mat4x4`): Projection matrix of camera to use for render.
+            cam (`Camera`): The camera to take pos, view and proj to render.
             forced (`bool`): If we are forced to render.
         Raises:
             # TODO: set exceptions
         """
-        super().render(view, proj, forced)
+        super().render(cam, forced)
 
         for child in self.children.values():
-            child.render(view, proj, forced)
+            child.render(cam, forced)
 
     @typing.override
     def cleanRessources(

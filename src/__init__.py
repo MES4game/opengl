@@ -23,7 +23,8 @@ Classes
 """
 
 
-from . import utils, ressources, shapes  # type: ignore # noqa: F401
-from .scene import Scene  # type: ignore # noqa: F401
+from . import utils, ressources  # type: ignore # noqa: F401
 from .camera import Camera, FPSCamera, FreeCamera, OrbitCamera, TPSCamera  # type: ignore # noqa: F401
+from . import shapes  # type: ignore # noqa: F401
+from .scene import Scene  # type: ignore # noqa: F401
 from .renderer import Renderer  # type: ignore # noqa: F401

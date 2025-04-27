@@ -177,7 +177,7 @@ class Renderer:
         Raises:
             # TODO: set exceptions
         """
-        self.scene.render(self.camera.view, self.camera.proj, self.camera.to_render)
+        self.scene.render(self.camera, self.camera.to_render)
         self.camera.to_render = False
 
     def quit(

@@ -1,4 +1,5 @@
-pyglm==2.8.2
 glfw==2.9.0
+pillow==11.2.1
+pyglm==2.8.2
 PyOpenGL==3.1.9
 PyOpenGL-accelerate==3.1.9
