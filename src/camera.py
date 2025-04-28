@@ -63,14 +63,19 @@ class Camera:
 
     def __init__(
             self: typing.Self,
+            window: typing.Any,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
+        Args:
+            window (`typing.Any`): the GLFW window where we are.
         Raises:
             # TODO: set exceptions
         """
+        self.window: typing.Any = window
+
         self.pos: glm.vec3 = glm.vec3(0, utils.PLAYER_SIZE * 0.95, 0)
         self.yaw: float = 0.0
         self.pitch: float = 0.0
@@ -79,13 +84,12 @@ class Camera:
         self.front: glm.vec3 = glm.vec3(1, 0, 0)
         self.right: glm.vec3 = glm.vec3(0, 0, 1)
         self.up: glm.vec3 = glm.vec3(0, 1, 0)
-        self.world_up: glm.vec3 = glm.vec3(self.up)
+        self.world_up: glm.vec3 = glm.vec3(0, 1, 0)
 
         self.view: glm.mat4x4 = glm.mat4x4()
         self.proj: glm.mat4x4 = glm.mat4x4()
 
-        self.mouse_last_x: float = 0.0
-        self.mouse_last_y: float = 0.0
+        self.mouse_last_x, self.mouse_last_y = glfw.get_cursor_pos(self.window)
 
         self.view_to_update: bool = True
         self.proj_to_update: bool = True
@@ -148,7 +152,6 @@ class Camera:
 
     def handleKeyboard(
             self: typing.Self,
-            window: typing.Any,
             delta_time: float,
             /
             ) -> None:
@@ -156,7 +159,6 @@ class Camera:
         Method to/that # TODO: set docstring
 
         Args:
-            window (`typing.Any`): the GLFW window where we need to handle keyboard.
             delta_time (`float`): the time elapsed since last frame in seconds.
         Raises:
             # TODO: set exceptions
@@ -164,13 +166,13 @@ class Camera:
         velocity: float = utils.MOVE_SPEED * delta_time
 
         combo: int = 0
-        if glfw.get_key(window, utils.KEY_BINDS.move_forward) == glfw.PRESS:
+        if glfw.get_key(self.window, utils.KEY_BINDS.move_forward) == glfw.PRESS:
             combo += 1
-        if glfw.get_key(window, utils.KEY_BINDS.move_backward) == glfw.PRESS:
+        if glfw.get_key(self.window, utils.KEY_BINDS.move_backward) == glfw.PRESS:
             combo += 2
-        if glfw.get_key(window, utils.KEY_BINDS.move_left) == glfw.PRESS:
+        if glfw.get_key(self.window, utils.KEY_BINDS.move_left) == glfw.PRESS:
             combo += 4
-        if glfw.get_key(window, utils.KEY_BINDS.move_right) == glfw.PRESS:
+        if glfw.get_key(self.window, utils.KEY_BINDS.move_right) == glfw.PRESS:
             combo += 8
 
         move_rot: float | None = Camera.__angles[combo]
@@ -183,11 +185,11 @@ class Camera:
             )
             self.pos += move_pos
 
-        if glfw.get_key(window, utils.KEY_BINDS.jump) == glfw.PRESS and glfw.get_key(window, utils.KEY_BINDS.sneak) == glfw.PRESS:
+        if glfw.get_key(self.window, utils.KEY_BINDS.jump) == glfw.PRESS and glfw.get_key(self.window, utils.KEY_BINDS.sneak) == glfw.PRESS:
             pass
-        elif glfw.get_key(window, utils.KEY_BINDS.jump) == glfw.PRESS:
+        elif glfw.get_key(self.window, utils.KEY_BINDS.jump) == glfw.PRESS:
             self.pos += self.world_up * utils.FLY_JUMP_HEIGHT * delta_time
-        elif glfw.get_key(window, utils.KEY_BINDS.sneak) == glfw.PRESS:
+        elif glfw.get_key(self.window, utils.KEY_BINDS.sneak) == glfw.PRESS:
             self.pos -= self.world_up * utils.FLY_SNEAK_HEIGHT * delta_time
 
         self.pos = glm.clamp(self.pos, -utils.BORDER, utils.BORDER)
@@ -195,27 +197,23 @@ class Camera:
 
     def handleMouse(
             self: typing.Self,
-            mouse_x: float,
-            mouse_y: float,
+            delta_x: float,
+            delta_y: float,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
         Args:
-            mouse_x (`float`): The position of the mouse on x axis.
-            mouse_y (`float`): The position of the mouse on y axis.
+            delta_x (`float`): The delta position of the mouse on x axis.
+            delta_y (`float`): The delta position of the mouse on y axis.
         Raises:
             # TODO: set exceptions
         """
-        delta_x: float = (mouse_x - self.mouse_last_x) * utils.CAM_SPEED
-        self.mouse_last_x = mouse_x
-        self.yaw += delta_x
+        self.yaw += delta_x * utils.CAM_SPEED
         self.yaw = self.yaw % utils.TWO_PI
 
-        delta_y: float = (self.mouse_last_y - mouse_y) * utils.CAM_SPEED
-        self.mouse_last_y = mouse_y
-        self.pitch += delta_y
+        self.pitch += delta_y * utils.CAM_SPEED
         self.pitch = max(utils.MIN_CAM_PITCH, min(utils.MAX_CAM_PITCH, self.pitch))
 
         self.updateVectors()
@@ -255,15 +253,18 @@ class FPSCamera(Camera):
     @typing.override
     def __init__(
             self: typing.Self,
+            window: typing.Any,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
+        Args:
+            window (`typing.Any`): the GLFW window where we are.
         Raises:
             # TODO: set exceptions
         """
-        super().__init__()
+        super().__init__(window)
         # TODO
 
 
@@ -281,15 +282,18 @@ class FreeCamera(Camera):
     @typing.override
     def __init__(
             self: typing.Self,
+            window: typing.Any,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
+        Args:
+            window (`typing.Any`): the GLFW window where we are.
         Raises:
             # TODO: set exceptions
         """
-        super().__init__()
+        super().__init__(window)
         # TODO
 
 
@@ -307,15 +311,18 @@ class OrbitCamera(Camera):
     @typing.override
     def __init__(
             self: typing.Self,
+            window: typing.Any,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
+        Args:
+            window (`typing.Any`): the GLFW window where we are.
         Raises:
             # TODO: set exceptions
         """
-        super().__init__()
+        super().__init__(window)
         # TODO
 
 
@@ -333,13 +340,16 @@ class TPSCamera(Camera):
     @typing.override
     def __init__(
             self: typing.Self,
+            window: typing.Any,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
+        Args:
+            window (`typing.Any`): the GLFW window where we are.
         Raises:
             # TODO: set exceptions
         """
-        super().__init__()
+        super().__init__(window)
         # TODO
