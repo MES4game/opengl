@@ -1,4 +1,4 @@
-# Cube mesh centered at (0, 0, 0) with a size of 1
+# Skybox mesh centered at (0, 0, 0) with a size of 1
 v  -0.500000  0.500000 -0.500000
 v  -0.500000  0.500000  0.500000
 v   0.500000  0.500000  0.500000
