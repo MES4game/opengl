@@ -344,8 +344,11 @@ class Shape:
             GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "color_vec3"), 1, glm.value_ptr(self.color))
 
         if self.has_light:
-            GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "cam_vec3"), 1, glm.value_ptr(renderer.sun.pos))
-            GL.glUniform3f(GL.glGetUniformLocation(self.shader.program, "light_vec3"), 1.0, 1.0, 1.0)
+            GL.glUniform1i(GL.glGetUniformLocation(self.shader.program, "num_lights"), len(renderer.lights))
+            for i, (pos, color) in enumerate(map(lambda light: (light.pos, light.light_color), renderer.lights)):
+                GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, f"light_positions[{i}]"), 1, glm.value_ptr(pos))
+                GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, f"light_colors[{i}]"), 1, glm.value_ptr(color))
+            GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "cam_vec3"), 1, glm.value_ptr(renderer.camera.pos))
 
         GL.glDrawElements(GL.GL_TRIANGLES, len(self.mesh.indices), GL.GL_UNSIGNED_INT, None)
 

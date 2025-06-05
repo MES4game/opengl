@@ -11,13 +11,18 @@ uniform vec3 cam_vec3;
 
 out vec3 frag_position;
 out vec3 frag_normal;
-out vec3 frag_light;
+out vec3 frag_view_pos;
 out vec2 frag_texcoord;
 
 void main() {
-    gl_Position = proj_mat4 * view_mat4 * model_mat4 * vec4(vert_position, 1);
-    frag_position = vec3(view_mat4 * model_mat4 * vec4(vert_position, 1));
-    frag_normal = mat3(transpose(inverse(view_mat4 * model_mat4))) * vert_normal;
-    frag_light = vec3(view_mat4 * vec4(cam_vec3, 1));
+    mat4 model_view = view_mat4 * model_mat4;
+    vec4 world_position = model_mat4 * vec4(vert_position, 1.0);
+    vec4 view_position = model_view * vec4(vert_position, 1.0);
+
+    gl_Position = proj_mat4 * view_position;
+
+    frag_position = view_position.xyz;
+    frag_view_pos = vec3(view_mat4 * vec4(cam_vec3, 1.0));
+    frag_normal = mat3(transpose(inverse(model_view))) * vert_normal;
     frag_texcoord = vert_texcoord;
 }

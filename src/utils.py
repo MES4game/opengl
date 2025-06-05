@@ -252,6 +252,8 @@ class KeyBinds:
         self.turn_right_down: int = KEY_DICT.get("6")
         self.turn_down_left: int = KEY_DICT.get("7")
         self.turn_down_right: int = KEY_DICT.get("8")
+        self.lamp: int = KEY_DICT.get("L")
+        self.moon: int = KEY_DICT.get("M")
 
 
 YAW_AXIS: glm.vec3 = glm.vec3(0, 1, 0)
@@ -264,8 +266,8 @@ ABS_PATH: AbsPath = AbsPath()
 EXTENSIONS: Extensions = Extensions()
 
 WINDOW_NAME: str = "PyOpenGL"
-SCREEN_WIDTH: int = 1280
-SCREEN_HEIGHT: int = 720
+SCREEN_WIDTH: int = 1920
+SCREEN_HEIGHT: int = 1080
 NEAR: float = 0.1
 FAR: float = 250.0
 CAM_SPEED: float = ONE_DEG_RAD / 10

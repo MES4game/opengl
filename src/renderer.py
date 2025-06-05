@@ -102,11 +102,12 @@ class Renderer:
         self.scene: Scene = Scene()
         self.skybox: shapes.Node = shapes.Node(shader_name="basic_tex", mesh_name="skybox", texture_name="skybox")
         self.skybox.scale(glm.vec3(utils.FAR - 0.000001))
-        self.sun: shapes.Shape = shapes.basics.Sphere(texture_name="sun")
+        self.sun: shapes.Light = shapes.Light(shader_name="basic_tex", mesh_name="sphere", texture_name="sun")
         self.sun.scale(glm.vec3(0.1))
         self.skybox.addElements(self.sun)
         self.floor: shapes.Shape = shapes.Shape(shader_name="basic_tex", mesh_name="floor", texture_name="grass")
         self.floor.scale(glm.vec3(utils.BORDER))
+        self.lights: list[shapes.Light] = [self.sun]
         self.start: int = 0
 
         self.mouse_last_x: float = 0.0
@@ -206,16 +207,22 @@ class Renderer:
         self.scene.updateModelMatrix(forced)
         self.skybox.setCoord(pos=self.camera.pos)
         tick = (time.perf_counter_ns() - self.start) // 1e9
-        tick %= 1200
-        rad = tick / 600 * math.pi
+        tick %= 600
+        rad = tick / 300 * math.pi
         self.sun.setCoord(
             pos=glm.vec3(
                 math.cos(rad),
-                abs(math.sin(rad)),
+                math.sin(rad),
                 0
             ) * 0.54,
             rot=glm.angleAxis(rad, utils.ROLL_AXIS)
         )
+        if self.sun.pos.y < 0:
+            if self.sun in self.lights:
+                self.lights.remove(self.sun)
+        else:
+            if self.sun not in self.lights:
+                self.lights.append(self.sun)
         self.skybox.updateModelMatrix(forced)
         self.floor.updateModelMatrix(forced)
 

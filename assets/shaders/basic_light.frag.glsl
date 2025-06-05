@@ -1,30 +1,43 @@
 #version 330 core
 
+#define MAX_LIGHTS 50
+
 in vec3 frag_position;
 in vec3 frag_normal;
-in vec3 frag_light;
+in vec3 frag_view_pos;
+in vec2 frag_texcoord;
 
-uniform vec3 light_vec3;
+uniform vec3 light_positions[MAX_LIGHTS];
+uniform vec3 light_colors[MAX_LIGHTS];
+uniform int num_lights;
 uniform vec3 color_vec3;
 
 out vec4 out_color;
 
 void main() {
-    // ambient
-    vec3 ambient = 0.1 * light_vec3;
-
-    // diffuse
     vec3 norm = normalize(frag_normal);
-    vec3 lightDir = normalize(frag_light - frag_position);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * light_vec3;
+    vec3 view_dir = normalize(frag_view_pos - frag_position);
 
-    // specular
-    vec3 viewDir = normalize(-frag_position);
-    vec3 reflectDir = reflect(-lightDir, norm);  
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = 0.3 * spec * light_vec3;
+    vec3 result = vec3(0.0);
 
-    vec3 result = (ambient + diffuse + specular) * color_vec3;
-    out_color = vec4(result, 1);
+    for (int i = 0; i < num_lights; i++) {
+        vec3 light_dir = normalize(light_positions[i] - frag_position);
+
+        // Ambient
+        vec3 ambient = 0.1 * light_colors[i];
+
+        // Diffuse
+        float diff = max(dot(norm, light_dir), 0.0);
+        vec3 diffuse = diff * light_colors[i];
+
+        // Specular
+        vec3 reflect_dir = reflect(-light_dir, norm);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+        vec3 specular = 0.3 * spec * light_colors[i];
+
+        vec3 lighting = ambient + diffuse + specular;
+        result += lighting;
+    }
+
+    out_color = vec4(result * color_vec3, 1.0);
 }
