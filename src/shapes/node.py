@@ -16,7 +16,9 @@ import typing
 # pip imports
 import pyglm.glm as glm
 # local imports
-from . import utils, Camera, Shape
+from . import Shape
+if typing.TYPE_CHECKING:
+    from .. import Renderer
 
 
 class Node(Shape):
@@ -145,34 +147,6 @@ class Node(Shape):
                         self.children.pop(key)
                         break
 
-    def moveChildren(
-            self: typing.Self,
-            rot_quat: glm.quat | None,
-            scale: glm.vec3 | None,
-            /
-            ) -> None:
-        """
-        Method to/that # TODO: set docstring
-
-        Args:
-            rot_quat (`glm.quat | None`): Rotation (as quaternion) applied to this node.
-            scale (`glm.vec3 | None`): Scale applied to this node.
-        Raises:
-            # TODO: set exceptions
-        """
-        if rot_quat is None and scale is None:
-            return
-
-        for child in self.children.values():
-            if rot_quat is not None:
-                child.setCoord(pos=glm.vec3(rot_quat * child.pos))
-
-            if scale is not None:
-                child.setCoord(pos=glm.vec3(child.pos * scale))
-
-            if isinstance(child, Node):
-                child.moveChildren(rot_quat, scale)
-
     @typing.override
     def switchLight(
             self: typing.Self,
@@ -193,119 +167,38 @@ class Node(Shape):
             child.switchLight(self.has_light)
 
     @typing.override
-    def setCoord(
-            self: typing.Self,
-            /,
-            *,
-            pos: glm.vec3 | None = None,
-            rot: glm.vec3 | None = None,
-            size: glm.vec3 | None = None
-            ) -> None:
-        """
-        Method to/that # TODO: set docstring
-
-        Args:
-            pos (`glm.vec3 | None`): New position of the node.
-            rot (`glm.vec3 | None`): New rotation of the node.
-            size (`glm.vec3 | None`): New size of the node.
-        Raises:
-            # TODO: set exceptions
-        """
-        old_rot = self.rot
-        old_size = self.size
-
-        super().setCoord(pos=pos, rot=rot, size=size)
-
-        if rot is None and size is None:
-            return
-
-        delta_rot = self.rot - old_rot
-        self.moveChildren(
-            (glm.angleAxis(delta_rot.x, utils.YAW_AXIS) * glm.angleAxis(delta_rot.y, utils.PITCH_AXIS) * glm.angleAxis(delta_rot.z, utils.ROLL_AXIS)) if rot is not None else None,
-            (self.size / old_size) if size is not None else None
-        )
-
-    @typing.override
-    def rotate(
-            self: typing.Self,
-            delta: glm.vec3,
-            /
-            ) -> None:
-        """
-        Method to/that # TODO: set docstring
-
-        Args:
-            delta (`glm.vec3`): The rotation to apply to node.
-        Raises:
-            # TODO: set exceptions
-        """
-        super().rotate(delta)
-
-        self.moveChildren(glm.angleAxis(delta.x, utils.YAW_AXIS) * glm.angleAxis(delta.y, utils.PITCH_AXIS) * glm.angleAxis(delta.z, utils.ROLL_AXIS), None)
-
-    @typing.override
-    def scale(
-            self: typing.Self,
-            value: glm.vec3,
-            /
-            ) -> None:
-        """
-        Method to/that # TODO: set docstring
-
-        Args:
-            value (`glm.vec3`): The scale to apply to node.
-        Raises:
-            # TODO: set exceptions
-        """
-        super().scale(value)
-
-        self.moveChildren(None, value)
-
-    @typing.override
     def updateModelMatrix(
             self: typing.Self,
             forced: bool = False,
             /,
             *,
-            parent_pos: glm.vec3 | None = None,
-            parent_rot: glm.vec3 | None = None,
-            parent_size: glm.vec3 | None = None
+            parent_model: glm.mat4x4 | None = None
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
         Args:
             forced (`bool`): If we are forced to recalculate model matrix.
-            parent_pos (`glm.vec3 | None`): Parent position to transform relative position to an absolute position.
-            parent_rot (`glm.vec3 | None`): Parent rotation to transform relative rotation to an absolute position.
-            parent_size (`glm.vec3 | None`): Parent size to transform relative size to an absolute position.
+            parent_model (`glm.mat4x4 | None`): Parent model matrix to transform relative model to an absolute model.
         Raises:
             # TODO: set exceptions
         """
         updated: bool = self.to_update or forced
         super().updateModelMatrix(
             forced,
-            parent_pos=parent_pos,
-            parent_rot=parent_rot,
-            parent_size=parent_size
+            parent_model=parent_model
         )
-
-        for_child_pos: glm.vec3 = self.pos if parent_pos is None else (self.pos + parent_pos)
-        for_child_rot: glm.vec3 = self.rot if parent_rot is None else (self.rot + parent_rot)
-        for_child_size: glm.vec3 = self.size if parent_size is None else (self.size * parent_size)
 
         for child in self.children.values():
             child.updateModelMatrix(
                 updated,
-                parent_pos=for_child_pos,
-                parent_rot=for_child_rot,
-                parent_size=for_child_size
+                parent_model=self.model
             )
 
     @typing.override
     def render(
             self: typing.Self,
-            cam: Camera,
+            renderer: "Renderer",
             forced: bool = False,
             /
             ) -> None:
@@ -313,15 +206,15 @@ class Node(Shape):
         Method to/that # TODO: set docstring
 
         Args:
-            cam (`Camera`): The camera to take pos, view and proj to render.
+            renderer (`Renderer`): The renderer to take sun for light and camera for pos, view and proj to render.
             forced (`bool`): If we are forced to render.
         Raises:
             # TODO: set exceptions
         """
-        super().render(cam, forced)
+        super().render(renderer, forced)
 
         for child in self.children.values():
-            child.render(cam, forced)
+            child.render(renderer, forced)
 
     @typing.override
     def cleanRessources(
@@ -334,7 +227,7 @@ class Node(Shape):
         Raises:
             # TODO: set exceptions
         """
-        for child in self.children.values():
+        for child in list(self.children.values()):
             child.cleanRessources()
         self.children.clear()
 

@@ -13,6 +13,8 @@ Classes
 
 # built-in imports
 import collections.abc
+import math
+import time
 import typing
 # pip imports
 import pyglm.glm as glm
@@ -98,8 +100,13 @@ class Renderer:
         self.window: typing.Any = Renderer.initGlfw()
         self.camera: Camera = camera(self.window)
         self.scene: Scene = Scene()
-        self.skybox: shapes.Shape = shapes.Shape(shader_name="basic_tex", mesh_name="skybox", texture_name="skybox")
-        self.skybox.setCoord(size=glm.vec3(utils.FAR - 0.000001))
+        self.skybox: shapes.Node = shapes.Node(shader_name="basic_tex", mesh_name="skybox", texture_name="skybox")
+        self.skybox.scale(glm.vec3(utils.FAR - 0.000001))
+        self.sun: shapes.Shape = shapes.basics.Sphere(texture_name="sun")
+        self.sun.scale(glm.vec3(0.1))
+        self.skybox.addElements(self.sun)
+        self.floor: shapes.Shape = shapes.Shape(shader_name="basic_tex", mesh_name="floor", texture_name="grass")
+        self.floor.scale(glm.vec3(utils.BORDER))
         self.start: int = 0
 
         self.mouse_last_x: float = 0.0
@@ -198,7 +205,19 @@ class Renderer:
         self.camera.updateMatrices(forced)
         self.scene.updateModelMatrix(forced)
         self.skybox.setCoord(pos=self.camera.pos)
+        tick = (time.perf_counter_ns() - self.start) // 1e9
+        tick %= 1200
+        rad = tick / 600 * math.pi
+        self.sun.setCoord(
+            pos=glm.vec3(
+                math.cos(rad),
+                abs(math.sin(rad)),
+                0
+            ) * 0.54,
+            rot=glm.angleAxis(rad, utils.ROLL_AXIS)
+        )
         self.skybox.updateModelMatrix(forced)
+        self.floor.updateModelMatrix(forced)
 
     def render(
             self: typing.Self,
@@ -210,8 +229,9 @@ class Renderer:
         Raises:
             # TODO: set exceptions
         """
-        self.scene.render(self.camera, self.camera.to_render)
-        self.skybox.render(self.camera, self.camera.to_render)
+        self.scene.render(self, self.camera.to_render)
+        self.skybox.render(self, self.camera.to_render)
+        self.floor.render(self, self.camera.to_render)
         self.camera.to_render = False
 
     def quit(
@@ -225,4 +245,6 @@ class Renderer:
             # TODO: set exceptions
         """
         self.scene.cleanRessources()
+        self.skybox.cleanRessources()
+        self.floor.cleanRessources()
         glfw.set_window_should_close(self.window, True)

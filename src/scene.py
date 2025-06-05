@@ -42,18 +42,6 @@ class Scene(shapes.Node):
         self._is_scene = True
 
     @typing.override
-    def moveChildren(
-            self: typing.Self,
-            rot_quat: glm.quat | None = None,
-            scale: glm.vec3 | None = None,
-            /
-            ) -> None:
-        """
-        DO NOTHING
-        """
-        return
-
-    @typing.override
     def setShader(
             self: typing.Self,
             shader_name: str = "",
@@ -103,7 +91,7 @@ class Scene(shapes.Node):
             /,
             *,
             pos: glm.vec3 | None = None,
-            rot: glm.vec3 | None = None,
+            rot: glm.quat | None = None,
             size: glm.vec3 | None = None
             ) -> None:
         """
@@ -125,7 +113,7 @@ class Scene(shapes.Node):
     @typing.override
     def rotate(
             self: typing.Self,
-            delta: glm.vec3,
+            delta: glm.quat,
             /
             ) -> None:
         """

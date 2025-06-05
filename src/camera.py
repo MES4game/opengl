@@ -76,15 +76,15 @@ class Camera:
         """
         self.window: typing.Any = window
 
-        self.pos: glm.vec3 = glm.vec3(0, utils.PLAYER_SIZE * 0.95, 0)
-        self.yaw: float = 0.0
+        self.pos: glm.vec3 = glm.vec3(0, utils.PLAYER_SIZE, 1)
+        self.yaw: float = - math.pi / 2
         self.pitch: float = 0.0
         self.fov: float = math.pi / 4
 
-        self.front: glm.vec3 = glm.vec3(1, 0, 0)
-        self.right: glm.vec3 = glm.vec3(0, 0, 1)
-        self.up: glm.vec3 = glm.vec3(0, 1, 0)
-        self.world_up: glm.vec3 = glm.vec3(0, 1, 0)
+        self.front: glm.vec3 = utils.ROLL_AXIS
+        self.right: glm.vec3 = utils.PITCH_AXIS
+        self.up: glm.vec3 = utils.YAW_AXIS
+        self.world_up: glm.vec3 = utils.YAW_AXIS
 
         self.view: glm.mat4x4 = glm.mat4x4()
         self.proj: glm.mat4x4 = glm.mat4x4()
@@ -111,10 +111,9 @@ class Camera:
         pitch_cos: float = math.cos(self.pitch)
         self.front = glm.vec3(
             math.cos(self.yaw) * pitch_cos,
-            math.sin(self.pitch),
+            math.sin(self.pitch) * (-1 if utils.INVERT_Y_MOUSE else 1),
             math.sin(self.yaw) * pitch_cos
         )
-        # TODO: do normalize by myself (because front and world_up are already normalized)
         self.right = glm.normalize(glm.cross(self.front, self.world_up))
         self.up = glm.normalize(glm.cross(self.right, self.front))
 
@@ -165,6 +164,9 @@ class Camera:
         """
         velocity: float = utils.MOVE_SPEED * delta_time
 
+        if glfw.get_key(self.window, utils.KEY_BINDS.sneak) == glfw.PRESS:
+            velocity *= utils.SPRINT_MULTIPLIER
+
         combo: int = 0
         if glfw.get_key(self.window, utils.KEY_BINDS.move_forward) == glfw.PRESS:
             combo += 1
@@ -185,13 +187,6 @@ class Camera:
             )
             self.pos += move_pos
 
-        if glfw.get_key(self.window, utils.KEY_BINDS.jump) == glfw.PRESS and glfw.get_key(self.window, utils.KEY_BINDS.sneak) == glfw.PRESS:
-            pass
-        elif glfw.get_key(self.window, utils.KEY_BINDS.jump) == glfw.PRESS:
-            self.pos += self.world_up * utils.FLY_JUMP_HEIGHT * delta_time
-        elif glfw.get_key(self.window, utils.KEY_BINDS.sneak) == glfw.PRESS:
-            self.pos -= self.world_up * utils.FLY_SNEAK_HEIGHT * delta_time
-
         self.pos = glm.clamp(self.pos, -utils.BORDER, utils.BORDER)
         self.view_to_update = True
 
@@ -211,7 +206,7 @@ class Camera:
             # TODO: set exceptions
         """
         self.yaw += delta_x * utils.CAM_SPEED
-        self.yaw = self.yaw % utils.TWO_PI
+        self.yaw = self.yaw % (math.pi * 2)
 
         self.pitch += delta_y * utils.CAM_SPEED
         self.pitch = max(utils.MIN_CAM_PITCH, min(utils.MAX_CAM_PITCH, self.pitch))

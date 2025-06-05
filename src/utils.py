@@ -238,13 +238,26 @@ class KeyBinds:
         self.jump: int = KEY_DICT.get("SPACE")
         self.sneak: int = KEY_DICT.get("LSHIFT")
         self.escape: int = KEY_DICT.get("ESCAPE")
+        self.rotate_up: int = KEY_DICT.get("UP")
+        self.rotate_left: int = KEY_DICT.get("LEFT")
+        self.rotate_right: int = KEY_DICT.get("RIGHT")
+        self.rotate_down: int = KEY_DICT.get("DOWN")
+        self.turn_front_left: int = KEY_DICT.get("9")
+        self.turn_front_right: int = KEY_DICT.get("0")
+        self.turn_up_left: int = KEY_DICT.get("1")
+        self.turn_up_right: int = KEY_DICT.get("2")
+        self.turn_left_up: int = KEY_DICT.get("3")
+        self.turn_left_down: int = KEY_DICT.get("4")
+        self.turn_right_up: int = KEY_DICT.get("5")
+        self.turn_right_down: int = KEY_DICT.get("6")
+        self.turn_down_left: int = KEY_DICT.get("7")
+        self.turn_down_right: int = KEY_DICT.get("8")
 
 
 YAW_AXIS: glm.vec3 = glm.vec3(0, 1, 0)
-PITCH_AXIS: glm.vec3 = glm.vec3(0, 0, 1)
-ROLL_AXIS: glm.vec3 = glm.vec3(1, 0, 0)
+PITCH_AXIS: glm.vec3 = glm.vec3(1, 0, 0)
+ROLL_AXIS: glm.vec3 = glm.vec3(0, 0, 1)
 ONE_DEG_RAD: float = math.pi / 180
-TWO_PI: float = math.pi * 2
 
 REL_PATH: RelPath = RelPath()
 ABS_PATH: AbsPath = AbsPath()
@@ -254,22 +267,14 @@ WINDOW_NAME: str = "PyOpenGL"
 SCREEN_WIDTH: int = 1280
 SCREEN_HEIGHT: int = 720
 NEAR: float = 0.1
-FAR: float = 50.0
-
-BORDER: float = 250.0
-BACK_COLOR: tuple[float, ...] = (0.5, 0.7, 1.0, 1.0)
-PLAYER_SIZE: float = 1.8
-
+FAR: float = 250.0
 CAM_SPEED: float = ONE_DEG_RAD / 10
 MIN_CAM_PITCH: float = -math.pi / 2 + ONE_DEG_RAD
 MAX_CAM_PITCH: float = math.pi / 2 - ONE_DEG_RAD
 ZOOM_SPEED: float = ONE_DEG_RAD * 3
 MIN_ZOOM: float = ONE_DEG_RAD * 10
 MAX_ZOOM: float = ONE_DEG_RAD * 90
-MOVE_SPEED: float = 5.0
-FLY_JUMP_HEIGHT: float = 3.0
-FLY_SNEAK_HEIGHT: float = 3.0
-
+INVERT_Y_MOUSE: bool = False
 KEY_DICT: KeyDoubleDict = KeyDoubleDict({
     "A": glfw.KEY_A,
     "B": glfw.KEY_B,
@@ -313,6 +318,18 @@ KEY_DICT: KeyDoubleDict = KeyDoubleDict({
     "TAB": glfw.KEY_TAB,
     "LSHIFT": glfw.KEY_LEFT_SHIFT,
     "LCTRL": glfw.KEY_LEFT_CONTROL,
+    "LEFT": glfw.KEY_LEFT,
+    "RIGHT": glfw.KEY_RIGHT,
+    "UP": glfw.KEY_UP,
+    "DOWN": glfw.KEY_DOWN,
     # TODO: add more keys
 })
 KEY_BINDS: KeyBinds = KeyBinds()
+
+BORDER: float = 1000.0
+BACK_COLOR: tuple[float, ...] = (0.5, 0.7, 1.0, 1.0)
+PLAYER_SIZE: float = 1.8
+MOVE_SPEED: float = 5.0
+SPRINT_MULTIPLIER: float = 2.0
+JUMP_HEIGHT: float = 2.2 * 9.81
+JUMP_TIME: float = 0.15

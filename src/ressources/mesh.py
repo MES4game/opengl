@@ -178,7 +178,7 @@ class Mesh(Ressource):
                 if len(line) < 19 or line[0] != 'f' or line[1] != ' ':
                     continue
 
-                parts = line[2:].split()[:4]
+                parts = list(filter(lambda x: x.count('/') == 2, line[2:].split()[:4]))
 
                 if len(parts) < 3:
                     continue
@@ -211,6 +211,7 @@ class Mesh(Ressource):
         min_len_v: int = 7
         min_len_vt: int = 6
         min_len_vn: int = 8
+        min_len_f: int = 19
 
         with open(src, 'r') as file:
             while True:
@@ -232,10 +233,10 @@ class Mesh(Ressource):
                     if not nb_vn:
                         pos_vn = pos
                     nb_vn += 1
-                elif len(line) >= 19 and line.startswith("f "):
+                elif len(line) >= min_len_f and line.startswith("f "):
                     if not nb_f:
                         pos_f = pos
-                    nb_f += len(line[2:].split()[:4]) - 2
+                    nb_f += len(list(filter(lambda x: x.count('/') == 2, line[2:].split()[:4]))) - 2
 
         data: MeshParseData = MeshParseData(
             positions=Mesh.__parseForArray(src, nb_v, pos_v, "v ", 3),

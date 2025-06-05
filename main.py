@@ -17,11 +17,11 @@ Functions
 import os
 import time
 # pip imports
-import pyglm.glm as glm
 import glfw  # type: ignore
 import OpenGL.GL as GL  # type: ignore
 # local imports
 import src
+import game
 
 
 src.utils.ABS_PATH.root = os.path.dirname(os.path.abspath(__file__))
@@ -56,46 +56,7 @@ def initWork(
         # TODO: set exceptions
     """
     renderer.start = time.perf_counter_ns()
-
-    cube_cia = src.shapes.basics.Cube(texture_name="logo_cia_2048")
-    cube_cia.move(glm.vec3(0, 3, 0))
-    sphere_cia = src.shapes.basics.Sphere(texture_name="logo_cia_2048")
-    sphere_cia.move(glm.vec3(0, -3, 0))
-
-    cube_tex = src.shapes.basics.Cube(texture_name="diamond")
-    cube_light = src.shapes.basics.Cube(color=glm.vec3(0.4, 0.9, 0.8), has_light=True)
-    cube_texlight = src.shapes.basics.Cube(texture_name="diamond", has_light=True)
-    cube_tex.move(glm.vec3(0, 0, -3))
-    cube_light.move(glm.vec3(0, 0, 0))
-    cube_texlight.move(glm.vec3(0, 0, 3))
-
-    pyramid_tex = src.shapes.basics.Pyramid(texture_name="diamond")
-    pyramid_light = src.shapes.basics.Pyramid(color=glm.vec3(0.4, 0.9, 0.8), has_light=True)
-    pyramid_texlight = src.shapes.basics.Pyramid(texture_name="diamond", has_light=True)
-    pyramid_tex.move(glm.vec3(3, 0, -3))
-    pyramid_light.move(glm.vec3(3, 0, 0))
-    pyramid_texlight.move(glm.vec3(3, 0, 3))
-
-    cylinder_tex = src.shapes.basics.Cylinder(texture_name="diamond")
-    cylinder_light = src.shapes.basics.Cylinder(color=glm.vec3(0.4, 0.9, 0.8), has_light=True)
-    cylinder_texlight = src.shapes.basics.Cylinder(texture_name="diamond", has_light=True)
-    cylinder_tex.move(glm.vec3(-3, 0, -3))
-    cylinder_light.move(glm.vec3(-3, 0, 0))
-    cylinder_texlight.move(glm.vec3(-3, 0, 3))
-
-    renderer.scene.addElements(
-        cube_tex,
-        cube_light,
-        cube_texlight,
-        pyramid_tex,
-        pyramid_light,
-        pyramid_texlight,
-        cylinder_tex,
-        cylinder_light,
-        cylinder_texlight,
-        cube_cia=cube_cia,
-        sphere_cia=sphere_cia
-    )
+    game.initGame(renderer)
 
 
 def loopWork(
@@ -112,11 +73,7 @@ def loopWork(
     Raises:
         # TODO: set exceptions
     """
-    for child in renderer.scene.children.values():
-        child.rotate(glm.vec3(delta_time, 0, 0))
-
-    renderer.scene.children["cube_cia"].rotate(glm.vec3(0, delta_time, delta_time))
-    renderer.scene.children["sphere_cia"].rotate(glm.vec3(0, delta_time, delta_time))
+    game.loopGame(renderer, delta_time)
 
 
 def main() -> None:
@@ -151,7 +108,7 @@ def main() -> None:
         renderer.updateMatrices()
         renderer.render()
 
-        if last_reset > 0.5:
+        if last_reset > 0.1:
             fps = nb_frames / last_reset
             glfw.set_window_title(renderer.window, f"{src.utils.WINDOW_NAME} - Running at {fps:.1f} FPS")
             nb_frames = 0

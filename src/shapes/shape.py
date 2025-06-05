@@ -17,9 +17,9 @@ import typing
 import pyglm.glm as glm
 import OpenGL.GL as GL  # type: ignore
 # local imports
-from . import utils, ressources, Camera
+from . import utils, ressources
 if typing.TYPE_CHECKING:
-    from . import Node
+    from . import Node, Renderer
 
 
 class Shape:
@@ -73,12 +73,12 @@ class Shape:
         self.parent_key: str = ""
 
         self.pos: glm.vec3 = glm.vec3(0)
-        self.rot: glm.vec3 = glm.vec3(0)
+        self.rot: glm.quat = glm.quat()
         self.size: glm.vec3 = glm.vec3(1)
 
         self.shader: ressources.Shader | None = None
         self.mesh: ressources.Mesh | None = None
-        self.color: glm.vec3 = color if color is not None else glm.vec3(1, 1, 1)
+        self.color: glm.vec3 = color if color is not None else glm.vec3(1)
         self.texture: ressources.Texture | None = None
         self.has_light: bool = False
 
@@ -205,7 +205,7 @@ class Shape:
             /,
             *,
             pos: glm.vec3 | None = None,
-            rot: glm.vec3 | None = None,
+            rot: glm.quat | None = None,
             size: glm.vec3 | None = None
             ) -> None:
         """
@@ -213,7 +213,7 @@ class Shape:
 
         Args:
             pos (`glm.vec3 | None`): New position of the shape.
-            rot (`glm.vec3 | None`): New rotation of the shape.
+            rot (`glm.quat | None`): New rotation of the shape.
             size (`glm.vec3 | None`): New size of the shape.
         Raises:
             # TODO: set exceptions
@@ -223,7 +223,7 @@ class Shape:
             self.to_update = True
 
         if rot is not None:
-            self.rot = rot % utils.TWO_PI
+            self.rot = rot
             self.to_update = True
 
         if size is not None:
@@ -249,19 +249,18 @@ class Shape:
 
     def rotate(
             self: typing.Self,
-            delta: glm.vec3,
+            delta: glm.quat,
             /
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
         Args:
-            delta (`glm.vec3`): The rotation to apply to shape.
+            delta (`glm.quat`): The rotation to apply to shape.
         Raises:
             # TODO: set exceptions
         """
-        self.rot += delta
-        self.rot = self.rot % utils.TWO_PI
+        self.rot = delta * self.rot
         self.to_update = True
 
     def scale(
@@ -286,39 +285,32 @@ class Shape:
             forced: bool = False,
             /,
             *,
-            parent_pos: glm.vec3 | None = None,
-            parent_rot: glm.vec3 | None = None,
-            parent_size: glm.vec3 | None = None
+            parent_model: glm.mat4x4 | None = None
             ) -> None:
         """
         Method to/that # TODO: set docstring
 
         Args:
             forced (`bool`): If we are forced to recalculate model matrix.
-            parent_pos (`glm.vec3 | None`): Parent position to transform relative position to an absolute position.
-            parent_rot (`glm.vec3 | None`): Parent rotation to transform relative rotation to an absolute position.
-            parent_size (`glm.vec3 | None`): Parent size to transform relative size to an absolute position.
+            parent_model (`glm.mat4x4 | None`): Parent model matrix to transform relative model to an absolute model.
         Raises:
             # TODO: set exceptions
         """
         if not (self.to_update or forced):
             return
 
-        self.model = glm.mat4x4()
-
-        self.model = glm.translate(self.model, self.pos if parent_pos is None else (self.pos + parent_pos))
-
-        rot: glm.vec3 = self.rot if parent_rot is None else (self.rot + parent_rot)
-        self.model *= glm.mat4_cast(glm.angleAxis(rot.x, utils.YAW_AXIS) * glm.angleAxis(rot.y, utils.PITCH_AXIS) * glm.angleAxis(rot.z, utils.ROLL_AXIS))  # type: ignore
-
-        self.model = glm.scale(self.model, self.size if parent_size is None else (self.size * parent_size))
+        self.model = glm.translate(glm.mat4x4(), self.pos)
+        self.model *= glm.mat4_cast(self.rot)  # type: ignore
+        self.model = glm.scale(self.model, self.size)
+        if parent_model is not None:
+            self.model = parent_model * self.model  # type: ignore
 
         self.to_update = False
         self.to_render = True
 
     def render(
             self: typing.Self,
-            cam: Camera,
+            renderer: "Renderer",
             forced: bool = False,
             /
             ) -> None:
@@ -326,7 +318,7 @@ class Shape:
         Method to/that # TODO: set docstring
 
         Args:
-            cam (`Camera`): The camera to take pos, view and proj to render.
+            renderer (`Renderer`): The renderer to take sun for light and camera for pos, view and proj to render.
             forced (`bool`): If we are forced to render.
         Raises:
             # TODO: set exceptions
@@ -339,8 +331,8 @@ class Shape:
         GL.glUseProgram(self.shader.program)
 
         GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "model_mat4"), 1, GL.GL_FALSE, glm.value_ptr(self.model))
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "view_mat4"), 1, GL.GL_FALSE, glm.value_ptr(cam.view))
-        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "proj_mat4"), 1, GL.GL_FALSE, glm.value_ptr(cam.proj))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "view_mat4"), 1, GL.GL_FALSE, glm.value_ptr(renderer.camera.view))
+        GL.glUniformMatrix4fv(GL.glGetUniformLocation(self.shader.program, "proj_mat4"), 1, GL.GL_FALSE, glm.value_ptr(renderer.camera.proj))
 
         GL.glBindVertexArray(self.mesh.vao)
 
@@ -352,7 +344,7 @@ class Shape:
             GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "color_vec3"), 1, glm.value_ptr(self.color))
 
         if self.has_light:
-            GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "cam_vec3"), 1, glm.value_ptr(cam.pos))
+            GL.glUniform3fv(GL.glGetUniformLocation(self.shader.program, "cam_vec3"), 1, glm.value_ptr(renderer.sun.pos))
             GL.glUniform3f(GL.glGetUniformLocation(self.shader.program, "light_vec3"), 1.0, 1.0, 1.0)
 
         GL.glDrawElements(GL.GL_TRIANGLES, len(self.mesh.indices), GL.GL_UNSIGNED_INT, None)
