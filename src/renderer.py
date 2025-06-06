@@ -207,8 +207,8 @@ class Renderer:
         self.scene.updateModelMatrix(forced)
         self.skybox.setCoord(pos=self.camera.pos)
         tick = (time.perf_counter_ns() - self.start) // 1e9
-        tick %= 600
-        rad = tick / 300 * math.pi
+        tick %= 60
+        rad = tick / 30 * math.pi
         self.sun.setCoord(
             pos=glm.vec3(
                 math.cos(rad),

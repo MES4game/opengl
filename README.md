@@ -41,15 +41,15 @@ You can change the configuration of the application by editing the `src/utils.py
 - L = lamp of desk
 
 - arrows = rotate rubiks cube
-- 0-9 = action : (WIP)
-  - 1 = top: turn left (WIP)
-  - 2 = top: turn right (WIP)
-  - 3 = left: turn top (WIP)
-  - 4 = left: turn bottom (WIP)
-  - 5 = right: turn top (WIP)
-  - 6 = right: turn bottom (WIP)
-  - 7 = bottom: turn left (WIP)
-  - 8 = bottom: turn right (WIP)
-  - 9 = front face: turn left (WIP)
-  - 0 = front face: turn right (WIP)
-Actions to use the cube are still buggy, so we don't recomend to use them.
+- 0-9 = action :
+  - 1 = top: turn left
+  - 2 = top: turn right
+  - 3 = left: turn top
+  - 4 = left: turn bottom
+  - 5 = right: turn top
+  - 6 = right: turn bottom
+  - 7 = bottom: turn left
+  - 8 = bottom: turn right
+  - 9 = front face: turn left
+  - 0 = front face: turn right
+Actions to use the cube are still buggy, they disapear during animation, but you can still use them to play normally.
